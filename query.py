@@ -15,21 +15,21 @@ balance = balance.items()
 balance_conv = []
 
 for x in balance:
+	reference = {\
+		'base_quote' : db.trade.find_one({"base": "XXBT",'quote':x[0]}),\
+		'quote_base' : db.trade.find_one({"base":x[0], 'quote': "XXBT"})}.items()
 	try:
-		reference = {\
-			'base_quote' : db.trade.find_one({"base": "ZUSD",'quote':str(x[0])}),\
-			'quote_base' : db.trade.find_one({"base":str(x[0]), 'quote': "ZUSD"}),\
-			'base_base' : db.trade.find_one({"base":  "ZUSD",'quote':str(x[0])}),\
-			'quote_quote': db.trade.find_one({"base":str(x[0]), 'quote': "ZUSD"})}.items()
 		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
-	except:
+	except Exception as e:
 		continue
-	if (factor[0] % 2) == 0:
-		factor = factor[1][1]['bid']
-	else:
-		factor = 1/factor[1][1]['ask']
 
-	balance_conv.append([float(x[1]), x[0], float(x[1])*factor])
+	if float(x[1]) > 0.002:
+		if factor[0] == 0:
+			value = factor[1][1]['bid'] / float(x[1])
+		else:
+			value = float(x[1]) / factor[1][1]['ask']
+
+		balance_conv.append([float(x[1]), x[0], value])
 
 balance_conv = sorted(balance_conv, key=operator.itemgetter(2), reverse=True)
 

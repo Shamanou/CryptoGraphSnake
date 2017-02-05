@@ -53,18 +53,18 @@ while true; do
 	echo
 	# ./query.py
 	start=`./query.py`
-	# ./evolve.py $start
-	echo "			+-----------------------+"
-	echo "			EVOLVING TRADE TRAJECTORY"
-	echo "			+-----------------------+"
-	echo
-	winner=`./evolve.py $start | tail -n 1`
-	echo "			+-----------------------+"
-	echo "			EXECUTING ORDER"
-	echo "			+-----------------------+"
-	if [ "$winner" != "NO SUITABLE INDIVIDUALS" ]; then
-		./addOrder.py "$winner" $start
-	else
-		echo "			$winner"
-	fi
+	./evolve.py $start
+	# echo "			+-----------------------+"
+	# echo "			EVOLVING TRADE TRAJECTORY"
+	# echo "			+-----------------------+"
+	# echo
+	# winner=`./evolve.py $start | tail -n 1`
+	# echo "			+-----------------------+"
+	# echo "			EXECUTING ORDER"
+	# echo "			+-----------------------+"
+	# if [ "$winner" != "NO SUITABLE INDIVIDUALS" ]; then
+	# 	./addOrder.py "$winner" $start
+	# else
+	# 	echo "			$winner"
+	# fi
 done

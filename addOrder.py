@@ -19,10 +19,10 @@ def wallet(curr):
 
 for i in range(len(trajectory)):
 	transaction = trajectory[i]
-	# fee = transaction['fees'][0][1]
-	print transaction
+	fee = transaction['fees'][0][1]
+	# print transaction
 	order = None
-	# volume -= (volume * fee)
+	volume -= (volume * fee)
 	if valueType:
 		startcurrency = transaction[valueType]
 
@@ -41,12 +41,10 @@ for i in range(len(trajectory)):
 			elif trajectory[i-1]['quote'] == transaction['base']:
 				type = 'sell'
 				volume = wallet(transaction['base'])
-		print transaction['base'], type, '%.6f' %(volume)
-
 
 	elif startcurrency == transaction['quote']:
 		type = 'buy'
-		volume = volume / transaction['ask']
+		volume = volume / transaction['bid']
 		if i > 0:
 			if trajectory[i-1]['quote'] == transaction['quote']:
 				type = 'buy'
@@ -60,17 +58,17 @@ for i in range(len(trajectory)):
 			elif trajectory[i-1]['quote'] == transaction['base']:
 				type = 'sell'
 				volume = wallet(transaction['base'])
-		print transaction['quote'], type, '%.6f' %(volume)
 
-	
+	print transaction['base']+"_"+transaction['quote'], type, float(volume)
+
 	if type == "sell":
 		order = k.query_private('AddOrder',\
 		 {'pair': transaction['base']+transaction['quote'],\
-		 'type': type,'ordertype': 'market', 'volume': '%.6f' %(volume) })
+		 'type': type,'ordertype': 'market', 'volume': float(volume) })
 	elif type == "buy":
 		order = k.query_private('AddOrder',\
 		 {'pair': transaction['base']+transaction['quote'],\
-		 'type': type, 'ordertype': 'market', 'volume': '%.6f' %(volume) })
+		 'type': type, 'ordertype': 'market', 'volume': float(volume) })
 	print order
 
 	if startcurrency == transaction['base']:
