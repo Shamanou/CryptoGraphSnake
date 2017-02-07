@@ -22,7 +22,7 @@ for i in range(len(trajectory)):
 	fee = transaction['fees'][0][1]
 	# print transaction
 	order = None
-	volume -= (volume * fee)
+	volume -= (volume * 0.36)
 	if valueType:
 		startcurrency = transaction[valueType]
 
