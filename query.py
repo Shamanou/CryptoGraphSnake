@@ -26,13 +26,13 @@ for x in balance:
 	except Exception as e:
 		continue
 
-	# if float(x[1]) > 0.002:
-	if factor[0] == 0:
-		value = factor[1][1]['bid'] / float(x[1])
-	else:
-		value = float(x[1]) / factor[1][1]['ask']
+	if float(x[1]) > 0.002:
+		if factor[0] == 0:
+			value = factor[1][1]['bid'] / float(x[1])
+		else:
+			value = float(x[1]) / factor[1][1]['ask']
 
-	balance_conv.append([float(x[1]), x[0], value])
+		balance_conv.append([float(x[1]), x[0], value])
 
 balance_conv = sorted(balance_conv, key=operator.itemgetter(2), reverse=True)
 
