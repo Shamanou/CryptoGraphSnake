@@ -4,6 +4,7 @@ from pymongo import MongoClient
 import sys
 import random
 import numpy
+from fractions import Fraction
 
 client = MongoClient()
 db = client.trade
@@ -96,13 +97,13 @@ def evaluate(individual):
 			fit -= fee_raw
 
 			if ttype == "base_base":
-				fit = 1/(gene['bid']*fit)
+				fit *= Fraction(1,Fraction(gene['bid']))
 			elif ttype == "quote_quote":
-				fit *= gene['bid']
+				fit *= Fraction(gene['bid'])
 			elif ttype == "quote_base":
-				fit /= gene['bid']
+				fit *= Fraction(1,Fraction(gene['bid']))
 			elif ttype == "base_quote":
-				fit = (1/fit) *  gene['bid']
+				fit = Fraction(1,Fraction(fit)) * Fraction(gene['bid'])
 			z += 1
 		isFirst = False
 		final = (gene,ttype)
@@ -115,27 +116,27 @@ def evaluate(individual):
 		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
 		if factor[0] == 0:
 			if final[1].split("_")[1] == "quote":
-				fitness = fit * (1/factor[1][1]['bid'])
+				fitness = Fraction(fit) * Fraction(1,Fraction(factor[1][1]['bid']))
 			else:
-				fitness = (1/fit) * (1/factor[1][1]['bid'])
+				fitness = Fraction(1,Fraction(fit)) * Fraction(1,Fraction(factor[1][1]['bid']))
 		elif factor[0] == 1:
 			if final[1].split("_")[1] == "quote":
-				fitness = (1/fit) * factor[1][1]['bid']
+				fitness = Fraction(1,Fraction(fit)) * Fraction(factor[1][1]['bid'])
 			else:
-				fitness = factor[1][1]['bid'] * fit
+				fitness = Fraction(factor[1][1]['bid']) * Fraction(fit)
 	else:
-		fitness = fit
+		fitness = Fraction(fit)
+
+	fitness = fitness.limit_denominator()
 
 	if start != "XXBT":
 		reference = {\
 			'base_quote' : db.trade.find_one({"base": "XXBT",'quote': start}),\
 			'quote_base' : db.trade.find_one({"base":start, 'quote': "XXBT"})}.items()
 		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
-		if factor[0] == 0:
-			vol *= 1/factor[1][1]['bid']
-		elif factor[0] == 1:
-			vol /= factor[1][1]['bid']
-	return fitness - vol,
+		vol = Fraction(Fraction(vol),Fraction(factor[1][1]['bid']))
+	vol = vol.limit_denominator()
+	return fitness-vol,
 
 
 toolbox.register("mate", tools.cxOnePoint)
