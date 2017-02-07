@@ -96,11 +96,11 @@ def evaluate(individual):
 			fit -= fee_raw
 
 			if ttype == "base_base":
-				fit =  (1/gene['bid']) * (1/fit)
+				fit = 1/(gene['bid']*fit)
 			elif ttype == "quote_quote":
 				fit *= gene['bid']
 			elif ttype == "quote_base":
-				fit *= (1/gene['bid'])
+				fit /= gene['bid']
 			elif ttype == "base_quote":
 				fit = (1/fit) *  gene['bid']
 			z += 1

@@ -18,18 +18,22 @@ if type(balance) != type([]):
 balance_conv = []
 
 for x in balance:
-	try:
+	if x[0] != "XXBT":
 		reference = {\
 			'base_quote' : db.trade.find_one({"base": "XXBT",'quote':x[0]}),\
 			'quote_base' : db.trade.find_one({"base":x[0], 'quote': "XXBT"})}.items()
-		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
-		if float(x[1]) > 0.002:
-			if factor[0] == 0:
-				value = factor[1][1]['bid'] / float(x[1])
-			else:
-				value = float(x[1]) / factor[1][1]['ask']
-	except Exception as e:
-		value = float(x[1])
+		try:
+			factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
+		except Exception as e:
+			continue
+	else:
+		factor = ['0',{'0':'','bid':float(x[1]),'ask':float(x[1])}]
+
+	if float(x[1]) > 0.002:
+		if factor[0] == 0:
+			value = factor[1][1]['bid'] / float(x[1])
+		else:
+			value = float(x[1]) / factor[1][1]['ask']
 
 		balance_conv.append([float(x[1]), x[0], value])
 
