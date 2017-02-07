@@ -12,7 +12,7 @@ k.load_key('apikey')
 
 balance = k.query_private('Balance')['result']
 balance = balance.items()
-if len(balance) == 1:
+if len(balance[0]) == 1:
 	balance = [balance]
 
 balance_conv = []
