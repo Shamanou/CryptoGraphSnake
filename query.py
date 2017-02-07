@@ -10,13 +10,11 @@ db = client.trade
 k = krakenex.API()
 k.load_key('apikey')
 
-balance = []
-
-if type(query_private('Balance')['result']) == type([]):
-	balance = type(query_private('Balance')['result'])
-else:
-	balance = [type(query_private('Balance')['result'])]
+balance = k.query_private('Balance')['result']
 balance = balance.items()
+if len(balance) == 1:
+	balance = [balance]
+
 balance_conv = []
 
 for x in balance:
