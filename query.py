@@ -14,7 +14,8 @@ balance = []
 
 if type(query_private('Balance')['result']) == type([]):
 	balance = type(query_private('Balance')['result'])
-balance = [type(query_private('Balance')['result'])]
+else:
+	balance = [type(query_private('Balance')['result'])]
 balance = balance.items()
 balance_conv = []
 
