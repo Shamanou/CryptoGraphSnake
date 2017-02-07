@@ -120,9 +120,9 @@ def evaluate(individual):
 				fitness = (1/fit) * (1/factor[1][1]['bid'])
 		elif factor[0] == 1:
 			if final[1].split("_")[1] == "quote":
-				fitness = fit * factor[1][1]['bid']
+				fitness = (1/fit) * factor[1][1]['bid']
 			else:
-				fitness = (1/factor[1][1]['bid']) * fit
+				fitness = factor[1][1]['bid'] * fit
 	else:
 		fitness = fit
 
@@ -132,9 +132,9 @@ def evaluate(individual):
 			'quote_base' : db.trade.find_one({"base":start, 'quote': "XXBT"})}.items()
 		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
 		if factor[0] == 0:
-			vol *= (1/factor[1][1]['bid'])
+			vol *= 1/factor[1][1]['bid']
 		elif factor[0] == 1:
-			vol *= factor[1][1]['bid']
+			vol /= factor[1][1]['bid']
 	return fitness - vol,
 
 

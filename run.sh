@@ -37,7 +37,7 @@ echo "			Developed by Shamanou van Leeuwen"
 echo
 echo
 
-while true; do
+# while true; do
 	echo "			========================="
 	echo "			+-----------------------+"
 	echo "			DOWNLOADING MARKET DATA"
@@ -67,4 +67,4 @@ while true; do
 	# else
 	# 	echo "			$winner"
 	# fi
-done
+# done
