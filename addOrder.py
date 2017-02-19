@@ -4,6 +4,8 @@ import ast
 import krakenex
 import sys
 import time
+from fractions import Fraction
+
 
 k = krakenex.API()
 k.load_key('apikey')
@@ -11,7 +13,7 @@ trajectory = ast.literal_eval(sys.argv[1])
 startcurrency = sys.argv[2]
 volume = float(sys.argv[3])
 valueType = None
-type = None
+ttype = None
 
 def wallet(curr):
 	balance = k.query_private('Balance')['result'][curr]
@@ -23,52 +25,57 @@ for i in range(len(trajectory)):
 	# print transaction
 	order = None
 	volume -= (volume * 0.36)
+	volume = Fraction(volume)
 	if valueType:
 		startcurrency = transaction[valueType]
 
 	if startcurrency == transaction['base']:
-		type = 'sell'
+		ttype = 'sell'
 		if i > 0:
 			if trajectory[i-1]['quote'] == transaction['quote']:
-				type = 'buy'
-				volume = wallet(transaction['quote']) / transaction['bid']
+				ttype = 'buy'
+				volume = Fraction(Fraction(wallet(transaction['quote'])),Fraction(transaction['bid']))
 			elif trajectory[i-1]['base'] == transaction['base']:
-				type = 'sell'
+				ttype = 'sell'
 				volume =  wallet(transaction['base'])
 			elif trajectory[i-1]['base'] == transaction['quote']:
-				type = "buy"
-				volume = wallet(transaction['quote']) / transaction['bid']
+				ttype = "buy"
+				volume = Fraction(Fraction(wallet(transaction['quote'])),Fraction(transaction['bid']))
 			elif trajectory[i-1]['quote'] == transaction['base']:
-				type = 'sell'
-				volume = wallet(transaction['base'])
+				ttype = 'sell'
+				volume = Fraction(wallet(transaction['base']))
 
 	elif startcurrency == transaction['quote']:
-		type = 'buy'
-		volume = volume / transaction['bid']
+		ttype = 'buy'
+		volume = Fraction(Fraction(volume), Fraction(transaction['bid']))
 		if i > 0:
 			if trajectory[i-1]['quote'] == transaction['quote']:
-				type = 'buy'
-				volume = wallet(transaction['quote']) / transaction['bid']
+				ttype = 'buy'
+				volume = Fraction(Fraction(wallet(transaction['quote'])), Fraction(transaction['bid']))
 			elif trajectory[i-1]['base'] == transaction['base']:
-				type = 'sell'
+				ttype = 'sell'
 				volume =  wallet(transaction['base'])
 			elif trajectory[i-1]['base'] == transaction['quote']:
-				type = "buy"
-				volume =  wallet(transaction['quote']) / transaction['bid']
+				ttype = "buy"
+				volume =  Fraction(Fraction(wallet(transaction['quote'])), Fraction(transaction['bid']))
 			elif trajectory[i-1]['quote'] == transaction['base']:
-				type = 'sell'
-				volume = wallet(transaction['base'])
+				ttype = 'sell'
+				volume = Fraction(wallet(transaction['base']))
 
-	print transaction['base']+"_"+transaction['quote'], type, float(volume)
+	if type(volume) == type(Fraction(1,1)):
+		volume = volume.limit_denominator()
+	else:
+		volume = volume
+	print transaction['base']+"_"+transaction['quote'], ttype, float(volume)
 
-	if type == "sell":
+	if ttype == "sell":
 		order = k.query_private('AddOrder',\
 		 {'pair': transaction['base']+transaction['quote'],\
-		 'type': type,'ordertype': 'market', 'volume': float(volume) })
-	elif type == "buy":
+		 'type': ttype,'ordertype': 'market', 'volume': float(volume) })
+	elif ttype == "buy":
 		order = k.query_private('AddOrder',\
 		 {'pair': transaction['base']+transaction['quote'],\
-		 'type': type, 'ordertype': 'market', 'volume': float(volume) })
+		 'type': ttype, 'ordertype': 'market', 'volume': float(volume) })
 	print order
 
 	if startcurrency == transaction['base']:

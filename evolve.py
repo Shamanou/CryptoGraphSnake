@@ -9,8 +9,8 @@ from fractions import Fraction
 client = MongoClient()
 db = client.trade
 
-start=sys.argv[1]
-volume=float(sys.argv[2])
+start = sys.argv[1]
+volume = float(sys.argv[2])
 
 def generateIndividual(icls):
 	options = list(db.trade.find({"base":start})) + list(db.trade.find({"quote":start}))
@@ -97,17 +97,17 @@ def evaluate(individual):
 			fit -= fee_raw
 
 			if ttype == "base_base":
-				fit *= Fraction(1,Fraction(gene['bid']))
+				fit = Fraction(Fraction(fit),Fraction(gene['bid']))
 			elif ttype == "quote_quote":
 				fit *= Fraction(gene['bid'])
 			elif ttype == "quote_base":
-				fit *= Fraction(1,Fraction(gene['bid']))
+				fit = Fraction(Fraction(fit),Fraction(gene['bid']))
 			elif ttype == "base_quote":
-				fit = Fraction(1,Fraction(fit)) * Fraction(gene['bid'])
+				fit = Fraction(Fraction(gene['bid']),Fraction(fit))
+
 			z += 1
 		isFirst = False
 		final = (gene,ttype)
-
 
 	if final[0][final[1].split("_")[1]] != "XXBT":
 		reference = {\
@@ -116,14 +116,14 @@ def evaluate(individual):
 		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
 		if factor[0] == 0:
 			if final[1].split("_")[1] == "quote":
-				fitness = Fraction(fit) * Fraction(1,Fraction(factor[1][1]['bid']))
+				fitness = Fraction(Fraction(fit),Fraction(factor[1][1]['bid']))
 			else:
-				fitness = Fraction(1,Fraction(fit)) * Fraction(1,Fraction(factor[1][1]['bid']))
+				fitness = Fraction(1,Fraction(fit) * Fraction(factor[1][1]['bid']))
 		elif factor[0] == 1:
 			if final[1].split("_")[1] == "quote":
-				fitness = Fraction(1,Fraction(fit)) * Fraction(factor[1][1]['bid'])
+				fitness = Fraction(Fraction(factor[1][1]['bid']),Fraction(fit))
 			else:
-				fitness = Fraction(factor[1][1]['bid']) * Fraction(fit)
+				fitness = Fraction(fit) * Fraction(factor[1][1]['bid'])
 	else:
 		fitness = Fraction(fit)
 
@@ -134,7 +134,10 @@ def evaluate(individual):
 			'base_quote' : db.trade.find_one({"base": "XXBT",'quote': start}),\
 			'quote_base' : db.trade.find_one({"base":start, 'quote': "XXBT"})}.items()
 		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
-		vol = Fraction(Fraction(vol),Fraction(factor[1][1]['bid']))
+		if factor[0] == 0:
+			vol =  Fraction(volume) / Fraction(factor[1][1]['bid'])
+		else:
+			vol = Fraction(factor[1][1]['bid'] * volume)
 	vol = vol.limit_denominator()
 	return fitness-vol,
 
@@ -153,7 +156,7 @@ stats.register("std", numpy.std)
 stats.register("min", numpy.min)
 stats.register("max", numpy.max)
 
-pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=40, stats=stats, halloffame=hof, verbose=True)
+pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=20, stats=stats, halloffame=hof, verbose=True)
 pop = [ i for i in pop if i.fitness.values[0] > 0 ]
 if len(pop) > 0:	
 	pop = sorted(pop, key=lambda ind:ind.fitness.values[0])

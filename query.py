@@ -3,6 +3,8 @@
 import krakenex
 from pymongo import MongoClient
 import operator
+from fractions import Fraction
+
 
 client = MongoClient()
 db = client.trade
@@ -25,18 +27,13 @@ for x in balance:
 		try:
 			factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
 		except Exception as e:
-			continue
+			pass
 	else:
-		factor = ['0',{'0':'','bid':float(x[1]),'ask':float(x[1])}]
+		factor = ['0',['0',{'0':'','bid':float(x[1]),'bid':Fraction(x[1])}]]
 
 	if float(x[1]) > 0.002:
-		if factor[0] == 0:
-			value = factor[1][1]['bid'] / float(x[1])
-		else:
-			value = float(x[1]) / factor[1][1]['ask']
+		balance_conv.append([float(x[1]), x[0], Fraction(factor[1][1]['bid'])])
 
-		balance_conv.append([float(x[1]), x[0], value])
+balance_conv = sorted(balance_conv, key=operator.itemgetter(2,0), reverse=True)
 
-balance_conv = sorted(balance_conv, key=operator.itemgetter(2), reverse=True)
-
-print "%s %.4f" %(str(balance_conv[0][1]), float(balance_conv[0][0]))
+print "%s %.4f %s" %(str(balance_conv[0][1]), float(balance_conv[0][0]), float(balance_conv[0][2]))
