@@ -48,11 +48,12 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 def evaluate(individual):
 	vol = volume
-	fit = vol
+	fit = Fraction(vol)
 	currency = start
 	factor = None
 	isFirst = True
 	isValid = False
+	fitness = None
 
 	if ((individual[0]['base'] != start) and (individual[0]['quote'] != start)):
 		return 0,
@@ -61,83 +62,101 @@ def evaluate(individual):
 	if (individual[1]['base'] == individual[2]['base']) and (individual[1]['quote'] == individual[2]['quote']) :
 		return 0,
 
-	if (individual[0]['base'] == individual[1]['base']) and\
-		((individual[1]['quote'] == individual[2]['quote']) or (individual[1]['quote'] == individual[2]['base'])):
-			isValid =True
-	if (individual[0]['base'] == individual[1]['quote']) and\
-		((individual[1]['base'] == individual[2]['quote']) or (individual[1]['base'] == individual[2]['base'])):
-			isValid =True
-	if (individual[0]['quote'] == individual[1]['quote']) and\
-		((individual[1]['base'] == individual[2]['base']) or (individual[1]['base'] == individual[2]['quote'])):
-			isValid =True
-	if (individual[0]['quote'] == individual[1]['base'] ) and\
-		((individual[1]['quote'] == individual[2]['base']) or (individual[1]['quote'] == individual[2]['quote'])):
-			isValid =True
+
+	curlist = []
+	for i,j in zip(range(0,len(individual)-1),range(1,len(individual))):
+		if (individual[i]['base'] == individual[j]['base']):
+			curlist.append(( individual[i]['base'], individual[j]['base'] ))
+			isValid = True
+		if (individual[i]['quote'] == individual[j]['quote']):
+			curlist.append(( individual[i]['quote'], individual[j]['quote'] ))
+			isValid = True
+		if (individual[i]['quote'] == individual[j]['base']):
+			curlist.append(( individual[i]['quote'], individual[j]['base'] ))
+			isValid = True
+		if (individual[i]['base'] == individual[j]['quote']):
+			curlist.append(( individual[i]['base'], individual[j]['quote'] ))
+			isValid = True
+
+	import itertools
+	curlist = list(set(itertools.chain(*curlist)))
+	if len(curlist) == 1:
+		isValid = False
 
 	if not isValid:
 		return 0,
 
 	trade_types = []
-	for i in range(len(individual)):
+	for i,j in zip(range(0,len(individual)-1),range(1,len(individual))):
 		trade_types.append({\
-			"base_base":individual[i-1]['base'] == individual[i]['base'],\
-			"quote_quote":individual[i-1]['quote'] == individual[i]['quote'],\
-			"quote_base":individual[i-1]['quote'] == individual[i]['base'],\
-			"base_quote":individual[i-1]['base'] == individual[i]['quote']})
+			"base_base":individual[i]['base'] == individual[j]['base'],\
+			"quote_quote":individual[i]['quote'] == individual[j]['quote'],\
+			"quote_base":individual[i]['quote'] == individual[j]['base'],\
+			"base_quote":individual[i]['base'] == individual[j]['quote']})
 	z = 0
 	final=None
 	ttype = None
 	for gene in individual:
+		if 0.01 > float(fit):
+			return 0,
 		if not isFirst:
 			try:
 				ttype = [ x[0] for x in trade_types[z].items() if x[1] ][0]
 			except:
 				return 0,
-			fee_raw = 0.36 * fit
-			fit -= fee_raw
 
+			fit -= 0.36 * fit
+			fit = Fraction(fit)
 			if ttype == "base_base":
-				fit = Fraction(Fraction(fit),Fraction(gene['bid']))
+				fit = Fraction(1,Fraction(Fraction(gene['bid']) * fit))
 			elif ttype == "quote_quote":
 				fit *= Fraction(gene['bid'])
 			elif ttype == "quote_base":
-				fit = Fraction(Fraction(fit),Fraction(gene['bid']))
+				fit *= Fraction(1,Fraction(gene['bid']))
 			elif ttype == "base_quote":
-				fit = Fraction(Fraction(gene['bid']),Fraction(fit))
-
+				fit = Fraction(Fraction(gene['bid']),fit)
 			z += 1
 		isFirst = False
+		# print float(fit), ttype, gene
 		final = (gene,ttype)
-
-	if final[0][final[1].split("_")[1]] != "XXBT":
+		if 0.01 > float(fit):
+			return 0,
+	# fit = 1
+	fit = fit.limit_denominator()
+	#convert trade output to bitcoin value
+	if (final[0]['quote'] != "XXBT") or (final[0]['base'] != "XXBT"):
 		reference = {\
 			'base_a' : db.trade.find_one({"base": "XXBT",'quote': final[0][final[1].split("_")[1]]}),\
 			'quote_a' : db.trade.find_one({"base":final[0][final[1].split("_")[1]], 'quote': "XXBT"})}.items()
-		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
-		if factor[0] == 0:
-			if final[1].split("_")[1] == "quote":
-				fitness = Fraction(Fraction(fit),Fraction(factor[1][1]['bid']))
-			else:
-				fitness = Fraction(1,Fraction(fit) * Fraction(factor[1][1]['bid']))
-		elif factor[0] == 1:
-			if final[1].split("_")[1] == "quote":
-				fitness = Fraction(Fraction(factor[1][1]['bid']),Fraction(fit))
-			else:
-				fitness = Fraction(fit) * Fraction(factor[1][1]['bid'])
-	else:
-		fitness = Fraction(fit)
+		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
+		if factor and (factor != []):
+			factor = factor[0]
+			if (factor[0] == 0) and (final[1].split("_")[1] == "quote"):
+				factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
+				fit *= Fraction(factor[1][1]['bid'])
 
-	fitness = fitness.limit_denominator()
+			elif (factor[0] == 0) and (final[1].split("_")[1] == "base"):
+				factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
+				fit = Fraction(Fraction(1,fit) * Fraction(factor[1][1]['bid']))
 
+			elif (factor[0] == 1) and (final[1].split("_")[1] == "quote"):
+				factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
+				fit *= Fraction(factor[1][1]['bid'])
+
+			elif (factor[0] == 1) and (final[1].split("_")[1] == "base"):
+				factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
+				fit = Fraction(Fraction(1,fit) * Fraction(factor[1][1]['bid']))
+	fitness = fit.limit_denominator()
+	#convert input volume
 	if start != "XXBT":
 		reference = {\
 			'base_quote' : db.trade.find_one({"base": "XXBT",'quote': start}),\
 			'quote_base' : db.trade.find_one({"base":start, 'quote': "XXBT"})}.items()
 		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
+		vol = Fraction(volume)
 		if factor[0] == 0:
-			vol =  Fraction(volume) / Fraction(factor[1][1]['bid'])
-		else:
-			vol = Fraction(factor[1][1]['bid'] * volume)
+			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
+		vol *= Fraction(factor[1][1]['bid'])
 	vol = vol.limit_denominator()
 	return fitness-vol,
 

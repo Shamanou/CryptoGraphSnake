@@ -1,7 +1,7 @@
 #! /bin/bash
 
 getCurrencyPairs () {
-    curl  --silent https://api.kraken.com/0/public/AssetPairs | jq ' .result | keys' | tr -d '"' | tr -d "," | tr -d "[" | tr -d "]" | tr -d " "
+    curl  --silent https://api.kraken.com/0/public/AssetPairs | jq ' .result | keys' | tr -d '"' | tr -d "," | tr -d "[" | tr -d "]" | tr -d " " #| grep -v "ZJPY"
 }
 
 getTickerInformation () {
@@ -53,7 +53,7 @@ while true; do
 	echo
 	# ./query.py
 	start=`./query.py`
-	# ./evolve.py $start
+	./evolve.py $start
 	echo "			+-----------------------+"
 	echo "			EVOLVING TRADE TRAJECTORY"
 	echo "			+-----------------------+"
