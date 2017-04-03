@@ -79,7 +79,6 @@ for i in range(len(trajectory)):
 		elif ttype == "base_quote":
 			trtype = "sell"
 			fit = wallet(trajectory[i]['quote'])
-		fit = Fraction(fit * Fraction(factor['bid']))
 	elif i == 2:
 		if trajectory[i-1][tmp.split("_")[1]] != "XXBT":
 			factor = db.trade.find_one({"base": trajectory[i-1][tmp.split("_")[1]],'quote': trajectory[i][tmp.split("_")[0]]})
@@ -97,7 +96,6 @@ for i in range(len(trajectory)):
 		elif ttype == "base_quote":
 			trtype = "sell"
 			fit = wallet(trajectory[i]['quote'])
-		fit = Fraction(Fraction(1,fit) * Fraction(factor['bid']))
 
 
 	volume = float(fit)
