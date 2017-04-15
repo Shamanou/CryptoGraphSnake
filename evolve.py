@@ -47,7 +47,7 @@ toolbox.register("individual", generateIndividual, creator.Individual)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 def evaluate(individual):
-	vol = volume
+	vol = Fraction(volume)
 	fit = Fraction(vol)
 	currency = start
 	factor = None
@@ -60,6 +60,15 @@ def evaluate(individual):
 	if (individual[0]['base'] == individual[1]['base']) and (individual[0]['quote'] == individual[1]['quote']) :
 		return 0,
 	if (individual[1]['base'] == individual[2]['base']) and (individual[1]['quote'] == individual[2]['quote']) :
+		return 0,
+
+	if (individual[0]['base'] == individual[1]['base']) or (individual[0]['base'] == individual[1]['quote']):
+		if start == individual[0]['base']:
+			return 0,
+	elif (individual[0]['quote'] == individual[1]['base']) or (individual[0]['quote'] == individual[1]['quote']):
+		if start == individual[0]['quote']:
+			return 0,
+	else:
 		return 0,
 
 
@@ -97,18 +106,17 @@ def evaluate(individual):
 	final=None
 	ttype = None
 	for gene in individual:
-		if 0.01 > float(fit):
+		if float(fit) <= 0.01  :
 			return 0,
 		if not isFirst:
 			try:
 				ttype = [ x[0] for x in trade_types[z].items() if x[1] ][0]
 			except:
 				return 0,
-
 			fit -= 0.36 * fit
 			fit = Fraction(fit)
 			if ttype == "base_base":
-				fit = Fraction(1,Fraction(Fraction(gene['bid']) * fit))
+				fit = Fraction(1,Fraction(gene['bid']) * fit)
 			elif ttype == "quote_quote":
 				fit *= Fraction(gene['bid'])
 			elif ttype == "quote_base":
@@ -119,41 +127,54 @@ def evaluate(individual):
 		isFirst = False
 		# print float(fit), ttype, gene
 		final = (gene,ttype)
-		if 0.01 > float(fit):
+		if float(fit) <= 0.01:
 			return 0,
+
 	# fit = 1
 	fit = fit.limit_denominator()
 	#convert trade output to bitcoin value
-	if (final[0]['quote'] != "XXBT") or (final[0]['base'] != "XXBT"):
-		reference = {\
-			'base_a' : db.trade.find_one({"base": "XXBT",'quote': final[0][final[1].split("_")[1]]}),\
-			'quote_a' : db.trade.find_one({"base":final[0][final[1].split("_")[1]], 'quote': "XXBT"})}.items()
-		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
-		if factor and (factor != []):
-			factor = factor[0]
-			if (factor[0] == 0) and (final[1].split("_")[1] == "quote"):
-				factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
-				fit *= Fraction(factor[1][1]['bid'])
+	fttype = None
+	if final[1].split('_')[1] == "quote":
+		fttype = "base"
+	else:
+		fttype = "quote"
 
-			elif (factor[0] == 0) and (final[1].split("_")[1] == "base"):
-				factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
-				fit = Fraction(Fraction(1,fit) * Fraction(factor[1][1]['bid']))
+	#TODO: HANDLE THIS NICELY
+	if (final[0]['base'] == "XXBT") or (final[0]['quote'] == "XXBT"):
+		return 0,
 
-			elif (factor[0] == 1) and (final[1].split("_")[1] == "quote"):
-				factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
-				fit *= Fraction(factor[1][1]['bid'])
+	reference = {\
+		'base_a' : db.trade.find_one({"base": "XXBT",'quote': final[0][fttype]}),\
+		'quote_a' : db.trade.find_one({"base":final[0][fttype], 'quote': "XXBT"})}.items()
+	factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
+	if factor and (factor != []):
+		factor = factor[0]
+		if (factor[0] == 0) and (fttype == "quote"):
+			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
+			fit *= factor[1][1]['bid']
 
-			elif (factor[0] == 1) and (final[1].split("_")[1] == "base"):
-				factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
-				fit = Fraction(Fraction(1,fit) * Fraction(factor[1][1]['bid']))
+		elif (factor[0] == 0) and (fttype == "base"):
+			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
+			fit = Fraction(1,fit) * factor[1][1]['bid']
+
+		elif (factor[0] == 1) and (fttype == "quote"):
+			factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
+			fit *= factor[1][1]['bid']
+
+		elif (factor[0] == 1) and (fttype == "base"):
+			factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
+			fit = Fraction(1,fit) * factor[1][1]['bid']
+
 	fitness = fit.limit_denominator()
 	#convert input volume
 	if start != "XXBT":
 		reference = {\
 			'base_quote' : db.trade.find_one({"base": "XXBT",'quote': start}),\
 			'quote_base' : db.trade.find_one({"base":start, 'quote': "XXBT"})}.items()
-		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
-		vol = Fraction(volume)
+		try:
+			factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
+		except:
+			return 0,
 		if factor[0] == 0:
 			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
 		vol *= Fraction(factor[1][1]['bid'])

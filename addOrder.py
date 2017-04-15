@@ -38,70 +38,72 @@ for i in range(len(trajectory)):
 		ttype = [ x[0] for x in trade_types[i].items() if x[1] ][0]
 	except:
 		pass
-
+	hasViqc = False
 	if i == 0:
-		if ttype == "quote_base":
-			tmp = "base_quote"
-		else:
-			tmp = ttype
-		if trajectory[i][tmp.split("_")[1]] != "XXBT":
-			factor = db.trade.find_one({"base": trajectory[i][tmp.split("_")[1]],'quote': trajectory[i+1][tmp.split("_")[0]]})
-		else:
-			factor = {'bid':1}
-		if not factor:
-			factor = {'bid':1}
 		if ttype == "base_base":
-			trtype = "sell"
-			fit = wallet(trajectory[i]['quote'])
-		elif ttype == "quote_quote":
 			trtype = "buy"
 			fit = wallet(trajectory[i]['quote'])
+			hasViqc = True
+		elif ttype == "quote_quote":
+			trtype = "sell"
+			fit = wallet(trajectory[i]['base'])
+			# hasViqc = True
 		elif ttype == "quote_base":
 			trtype = "sell"
-			fit = wallet(trajectory[i]['quote'])
+			fit = wallet(trajectory[i]['base'])
+			# hasViqc = True
 		elif ttype == "base_quote":
-			trtype = "sell"
+			trtype = "buy"
 			fit = wallet(trajectory[i]['quote'])
+			hasViqc = True
 	elif i == 1:
-		if trajectory[i-1][tmp.split("_")[1]] != "XXBT":
-			factor = db.trade.find_one({"base": trajectory[i-1][tmp.split("_")[1]],'quote': trajectory[i][tmp.split("_")[0]]})
-		else:
-			factor = {'bid':1}
 		if ttype == "base_base":
-			trtype = "sell"
+			trtype = "buy"
 			fit = wallet(trajectory[i]['quote'])
+			# hasViqc = True
 		elif ttype == "quote_quote":
-			trtype = "buy"
-			fit = wallet(trajectory[i]['quote'])
+			trtype = "sell"
+			fit = wallet(trajectory[i]['base'])
+			# hasViqc = True
 		elif ttype == "quote_base":
-			trtype = "buy"
-			fit = wallet(trajectory[i]['quote'])
+			trtype = "sell"
+			fit = wallet(trajectory[i]['base'])
+			# hasViqc = True
 		elif ttype == "base_quote":
 			trtype = "sell"
 			fit = wallet(trajectory[i]['quote'])
+			hasViqc = True
 	elif i == 2:
-		if trajectory[i-1][tmp.split("_")[1]] != "XXBT":
-			factor = db.trade.find_one({"base": trajectory[i-1][tmp.split("_")[1]],'quote': trajectory[i][tmp.split("_")[0]]})
-		else:
-			factor = {'bid':1}
 		if ttype == "base_base":
 			trtype = "buy"
-			fit = wallet(trajectory[i]['quote'])
+			fit = wallet(trajectory[i]['base'])
+			# hasViqc = True
 		elif ttype == "quote_quote":
-			trtype = "sell"
-			fit = wallet(trajectory[i]['quote'])
-		elif ttype == "quote_base":
 			trtype = "buy"
 			fit = wallet(trajectory[i]['quote'])
+			# hasViqc = True
+		elif ttype == "quote_base":
+			trtype = "sell"
+			fit = wallet(trajectory[i]['quote'])
+			# hasViqc = True
 		elif ttype == "base_quote":
 			trtype = "sell"
 			fit = wallet(trajectory[i]['quote'])
+			# hasViqc = True
 
 
 	volume = float(fit)
+
 	print trajectory[i]['base']+"_"+trajectory[i]['quote'], trtype, format(float(volume), '.15f'), ttype
-	order = k.query_private('AddOrder',\
-	 {'pair': trajectory[i]['base']+trajectory[i]['quote'],\
-	 'type': trtype, 'ordertype': 'market', 'volume': format(float(volume), '.15f') })
+	query = {'pair': trajectory[i]['base']+trajectory[i]['quote'],\
+	 'type': trtype,\
+	 'ordertype': 'market', \
+	 'volume': format(float(volume), '.15f'), \
+	}
+	if hasViqc:
+		query['oflags'] = 'viqc'
+	print query
+	order = k.query_private('AddOrder', query)
+
 	print order
-	time.sleep(15)
+	time.sleep(10)

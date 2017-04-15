@@ -52,19 +52,51 @@ while true; do
 	echo "			+-----------------------+"
 	echo
 	# ./query.py
-	start=`./query.py`
-	./evolve.py $start
+	start=`./query.py 0`
+	# ./evolve.py $start
 	echo "			+-----------------------+"
-	echo "			EVOLVING TRADE TRAJECTORY"
+	echo "			EVOLVING TRADE TRAJECTORY nr. 1"
 	echo "			+-----------------------+"
 	echo
 	winner=`./evolve.py $start | tail -n 1`
 	echo "			+-----------------------+"
-	echo "			EXECUTING ORDER"
+	echo "			EXECUTING ORDERS"
 	echo "			+-----------------------+"
 	if [ "$winner" != "NO SUITABLE INDIVIDUALS" ]; then
 		./addOrder.py "$winner" $start
 	else
 		echo "			$winner"
 	fi
+	start=`./query.py 1`
+	# ./evolve.py $start
+	echo "			+-----------------------+"
+	echo "			EVOLVING TRADE TRAJECTORY nr. 2"
+	echo "			+-----------------------+"
+	echo
+	winner=`./evolve.py $start | tail -n 1`
+	echo "			+-----------------------+"
+	echo "			EXECUTING ORDERS"
+	echo "			+-----------------------+"
+	if [ "$winner" != "NO SUITABLE INDIVIDUALS" ]; then
+		./addOrder.py "$winner" $start
+	else
+		echo "			$winner"
+	fi
+	start=`./query.py 2`
+	# ./evolve.py $start
+	echo "			+-----------------------+"
+	echo "			EVOLVING TRADE TRAJECTORY nr. 3"
+	echo "			+-----------------------+"
+	echo
+	winner=`./evolve.py $start | tail -n 1`
+	echo "			+-----------------------+"
+	echo "			EXECUTING ORDERS"
+	echo "			+-----------------------+"
+	if [ "$winner" != "NO SUITABLE INDIVIDUALS" ]; then
+		./addOrder.py "$winner" $start
+	else
+		echo "			$winner"
+	fi
+
+
 done

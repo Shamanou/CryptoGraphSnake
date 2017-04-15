@@ -4,7 +4,7 @@ import krakenex
 from pymongo import MongoClient
 import operator
 from fractions import Fraction
-
+import sys
 
 client = MongoClient()
 db = client.trade
@@ -30,12 +30,17 @@ for x in balance:
 			if factor[0] == 0:
 				factor[1][1]['bid'] = Fraction(1,vol)
 			vol = Fraction(vol, factor[1][1]['bid'])
-			balance_conv.append((x[0],float(x[1]),vol))
+			if float(x[1]) > 0.01:
+				balance_conv.append((x[0],float(x[1]),vol))
 		except:
-			balance_conv.append((x[0],float(x[1]),float(x[1])))
+			if float(x[1]) > 0.01:
+				balance_conv.append((x[0],float(x[1]),float(x[1])))
 	else:
-		balance_conv.append((x[0],float(x[1]),float(x[1])))
+		if float(x[1]) > 0.01:
+			balance_conv.append((x[0],float(x[1]),float(x[1])))
 
 balance_conv = sorted(balance_conv, key=operator.itemgetter(2), reverse=True)
 
-print "%s %.4f" %(str(balance_conv[0][0]), float(balance_conv[0][1]))
+pos = int(sys.argv[1])
+
+print "%s %.4f" %(str(balance_conv[pos][0]), float(balance_conv[pos][1]))
