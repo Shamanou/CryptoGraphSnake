@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 from pymongo import MongoClient
-import sys
 import random
 import numpy
 from fractions import Fraction
@@ -9,8 +8,15 @@ from fractions import Fraction
 client = MongoClient()
 db = client.trade
 
-start = sys.argv[1]
-volume = float(sys.argv[2])
+start = None
+volume = None
+
+
+def setStart_Volume(s,v):
+	global start
+	start = s
+	global volume
+	volume = v
 
 def generateIndividual(icls):
 	options = list(db.trade.find({"base":start})) + list(db.trade.find({"quote":start}))
@@ -181,33 +187,33 @@ def evaluate(individual):
 	vol = vol.limit_denominator()
 	return fitness-vol,
 
+def run():
 
-toolbox.register("mate", tools.cxOnePoint)
-toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.1)
-toolbox.register("select", tools.selTournament, tournsize=3)
-toolbox.register("evaluate", evaluate)
+	toolbox.register("mate", tools.cxOnePoint)
+	toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.1)
+	toolbox.register("select", tools.selTournament, tournsize=3)
+	toolbox.register("evaluate", evaluate)
 
 
-pop = toolbox.population(n=300)
-hof = tools.HallOfFame(1)
-stats = tools.Statistics(lambda ind: ind.fitness.values)
-stats.register("avg", numpy.mean)
-stats.register("std", numpy.std)
-stats.register("min", numpy.min)
-stats.register("max", numpy.max)
+	pop = toolbox.population(n=300)
+	hof = tools.HallOfFame(1)
+	stats = tools.Statistics(lambda ind: ind.fitness.values)
+	stats.register("avg", numpy.mean)
+	stats.register("std", numpy.std)
+	stats.register("min", numpy.min)
+	stats.register("max", numpy.max)
 
-pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=20, stats=stats, halloffame=hof, verbose=True)
-pop = [ i for i in pop if i.fitness.values[0] > 0 ]
-if len(pop) > 0:	
-	pop = sorted(pop, key=lambda ind:ind.fitness.values[0])
-	winner = pop[0]
+	pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=20, stats=stats, halloffame=hof, verbose=True)
+	pop = [ i for i in pop if i.fitness.values[0] > 0 ]
+	if len(pop) > 0:	
+		pop = sorted(pop, key=lambda ind:ind.fitness.values[0], reverse=True)
+		winners = pop[0:3]
 
-	for i in range(len(winner)):
-		winner[i].pop('_id',None)
+		for i in range(len(winners)):
+			for z in range(len(winners[i])):
+				winners[i][z].pop('_id')
 
-	import json
-	print winner
-
-	# print json.dumps(winner).replace(" ","")
-else:
-	print "NO SUITABLE INDIVIDUALS"
+		return winners
+		# print json.dumps(winner).replace(" ","")
+	else:
+		return None

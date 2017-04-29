@@ -1,7 +1,7 @@
 #! /bin/bash
 
 getCurrencyPairs () {
-    curl  --silent https://api.kraken.com/0/public/AssetPairs | jq ' .result | keys' | tr -d '"' | tr -d "," | tr -d "[" | tr -d "]" | tr -d " " #| grep -v "ZJPY"
+    curl  --silent https://api.kraken.com/0/public/AssetPairs | jq ' .result | keys' | tr -d '"' | tr -d "," | tr -d "[" | tr -d "]" | tr -d " "
 }
 
 getTickerInformation () {
@@ -58,14 +58,17 @@ while true; do
 	echo "			EVOLVING TRADE TRAJECTORY nr. 1"
 	echo "			+-----------------------+"
 	echo
-	winner=`./evolve.py $start | tail -n 1`
+	winner=`./evolve.py $start | tail -n 3`
 	echo "			+-----------------------+"
 	echo "			EXECUTING ORDERS"
 	echo "			+-----------------------+"
-	if [ "$winner" != "NO SUITABLE INDIVIDUALS" ]; then
-		./addOrder.py "$winner" $start
+	final_line=`echo -ne "$winner" | tail -n 1`
+	if [ "$final_line" != "NO SUITABLE INDIVIDUALS" ]; then
+		printf '%s\n' "$winner" | while read -r line; do
+			./addOrder.py "$line" $start
+		done
 	else
-		echo "			$winner"
+		echo "			$final_line"
 	fi
 	start=`./query.py 1`
 	# ./evolve.py $start
@@ -73,30 +76,34 @@ while true; do
 	echo "			EVOLVING TRADE TRAJECTORY nr. 2"
 	echo "			+-----------------------+"
 	echo
-	winner=`./evolve.py $start | tail -n 1`
+	winner=`./evolve.py $start | tail -n 3`
 	echo "			+-----------------------+"
 	echo "			EXECUTING ORDERS"
 	echo "			+-----------------------+"
-	if [ "$winner" != "NO SUITABLE INDIVIDUALS" ]; then
-		./addOrder.py "$winner" $start
+	final_line=`echo -ne "$winner" | tail -n 1`
+	if [ "$final_line" != "NO SUITABLE INDIVIDUALS" ]; then
+		printf '%s\n' "$winner" | while read -r line; do
+			./addOrder.py "$line" $start
+		done
 	else
-		echo "			$winner"
+		echo "			$final_line"
 	fi
-	start=`./query.py 2`
-	# ./evolve.py $start
-	echo "			+-----------------------+"
-	echo "			EVOLVING TRADE TRAJECTORY nr. 3"
-	echo "			+-----------------------+"
-	echo
-	winner=`./evolve.py $start | tail -n 1`
-	echo "			+-----------------------+"
-	echo "			EXECUTING ORDERS"
-	echo "			+-----------------------+"
-	if [ "$winner" != "NO SUITABLE INDIVIDUALS" ]; then
-		./addOrder.py "$winner" $start
-	else
-		echo "			$winner"
-	fi
-
-
+	# start=`./query.py 2`
+	# # ./evolve.py $start
+	# echo "			+-----------------------+"
+	# echo "			EVOLVING TRADE TRAJECTORY nr. 3"
+	# echo "			+-----------------------+"
+	# echo
+	# winner=`./evolve.py $start | tail -n 1`
+	# echo "			+-----------------------+"
+	# echo "			EXECUTING ORDERS"
+	# echo "			+-----------------------+"
+	# if [ "$winner" != "NO SUITABLE INDIVIDUALS" ]; then
+	# 	printf '%s\n' "$winner" | while read -r line; do
+	# 		# echo $line
+	# 		./addOrder.py "$line" $start
+	# 	done
+	# else
+	# 	echo "			$winner"
+	# fi
 done
