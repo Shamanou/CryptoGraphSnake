@@ -28,19 +28,20 @@ def getStart(pos):
 				factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
 				vol = Fraction(x[1])
 				if factor[0] == 0:
-					factor[1][1]['bid'] = Fraction(1,vol)
+				    factor[1][1]['bid'] = Fraction(1,factor[1][1]['bid'])
+                                else:
+                                    factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
 				vol = Fraction(vol, factor[1][1]['bid'])
-				if float(vol) > 0.01:
-					balance_conv.append((x[0],float(x[1]),float(vol)))
+				#if float(vol) > 0.01:
+				balance_conv.append((x[0],float(x[1]),float(vol)))
 			except:
-				if float(x[1]) > 0.01:
-					balance_conv.append((x[0],float(x[1]),float(x[1])))
+				#if float(x[1]) > 0.01:
+			    balance_conv.append((x[0],float(x[1]),float(x[1])))
 		else:
-			if float(x[1]) > 0.01:
-				balance_conv.append((x[0],float(x[1]),float(x[1])))
+			#if float(x[1]) > 0.1:
+		    balance_conv.append((x[0],float(x[1]),float(x[1])))
 
 	balance_conv = sorted(balance_conv, key=operator.itemgetter(2), reverse=True)
-
 
 	if pos < len(balance_conv):
 		return (str(balance_conv[pos][0]), float(balance_conv[pos][1]))

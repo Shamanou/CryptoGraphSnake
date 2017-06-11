@@ -9,8 +9,10 @@ import addOrder
 client = MongoClient()
 trade_collection = client.trade.trade
 
+
 def getCurrencyPairs():
-	return requests.get('https://api.kraken.com/0/public/AssetPairs').json()['result'].keys()
+    res = requests.get('https://api.kraken.com/0/public/AssetPairs').json()['result'].keys()
+    return [ x for x in res if x[:3] != u"GNO" ]
 
 def getTickerInformation(pairs):
 	ticker = requests.post('https://api.kraken.com/0/public/Ticker',data = {'pair': ','.join(pairs)}).json()['result']
@@ -55,6 +57,26 @@ while True:
 	start = query.getStart(0)
 	print "			+-----------------------+"
 	print "			EVOLVING TRADE TRAJECTORY nr. 1"
+	print "			+-----------------------+"
+	print ""
+	evolve.setStart_Volume(start[0],start[1])
+	winners = evolve.run()
+	print "			+-----------------------+"
+	print "			EXECUTING ORDERS"
+	print "			+-----------------------+"
+	if winners:
+	    for winner in winners:
+	        addOrder.trade(winner,start)
+	else:
+		print "no suitable trajectories" 
+
+	print "			+-----------------------+"
+	print "			GRABBING TRADE START VALUE"
+	print "			+-----------------------+"
+	print ""
+	start = query.getStart(1)
+	print "			+-----------------------+"
+	print "			EVOLVING TRADE TRAJECTORY nr. 2"
 	print "			+-----------------------+"
 	print ""
 	evolve.setStart_Volume(start[0],start[1])

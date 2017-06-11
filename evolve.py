@@ -112,8 +112,6 @@ def evaluate(individual):
 	final=None
 	ttype = None
 	for gene in individual:
-		if float(fit) <= 0.01  :
-			return 0,
 		if not isFirst:
 			try:
 				ttype = [ x[0] for x in trade_types[z].items() if x[1] ][0]
@@ -133,8 +131,9 @@ def evaluate(individual):
 		isFirst = False
 		# print float(fit), ttype, gene
 		final = (gene,ttype)
-		if float(fit) <= 0.01:
-			return 0,
+                #if float(fit) <= 0.1:
+                #        print float(fit),final
+		#	return 0,
 
 	# fit = 1
 	fit = fit.limit_denominator()
@@ -146,8 +145,8 @@ def evaluate(individual):
 		fttype = "quote"
 
 	#TODO: HANDLE THIS NICELY
-	if (final[0]['base'] == "XXBT") or (final[0]['quote'] == "XXBT"):
-		return 0,
+	#if (final[0]['base'] == "XXBT") or (final[0]['quote'] == "XXBT"):
+	#	return 0,
 
 	reference = {\
 		'base_a' : db.trade.find_one({"base": "XXBT",'quote': final[0][fttype]}),\
@@ -172,7 +171,7 @@ def evaluate(individual):
 			fit = Fraction(1,fit) * factor[1][1]['bid']
 
 	fitness = fit.limit_denominator()
-	#convert input volume
+	#convert input volume to BTC reference
 	if start != "XXBT":
 		reference = {\
 			'base_quote' : db.trade.find_one({"base": "XXBT",'quote': start}),\
@@ -180,12 +179,14 @@ def evaluate(individual):
 		try:
 			factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
 		except:
+                        #print start
 			return 0,
-		if factor[0] == 0:
-			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
+#		if factor[0] == 0:
+#			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
 		vol *= Fraction(factor[1][1]['bid'])
 	vol = vol.limit_denominator()
-	return fitness-vol,
+        #evolution takes place on the profit expected
+	return float(fitness)-float(vol),
 
 def run():
 
@@ -195,7 +196,7 @@ def run():
 	toolbox.register("evaluate", evaluate)
 
 
-	pop = toolbox.population(n=300)
+	pop = toolbox.population(n=500)
 	hof = tools.HallOfFame(1)
 	stats = tools.Statistics(lambda ind: ind.fitness.values)
 	stats.register("avg", numpy.mean)
@@ -203,11 +204,11 @@ def run():
 	stats.register("min", numpy.min)
 	stats.register("max", numpy.max)
 
-	pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.2, ngen=20, stats=stats, halloffame=hof, verbose=True)
+	pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.3, ngen=20, stats=stats, halloffame=hof, verbose=True)
 	pop = [ i for i in pop if i.fitness.values[0] > 0 ]
 	if len(pop) > 0:	
 		pop = sorted(pop, key=lambda ind:ind.fitness.values[0], reverse=True)
-		winners = pop[0:3]
+		winners = pop[0:5]
 
 		for i in range(len(winners)):
 			for z in range(len(winners[i])):

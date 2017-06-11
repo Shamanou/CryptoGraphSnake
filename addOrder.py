@@ -38,6 +38,7 @@ def trade(trajectory, startcurrency):
 		except:
 			pass
 		hasViqc = False
+
 		if i == 0:
 			if ttype == "base_base":
 				trtype = "buy"
@@ -52,18 +53,18 @@ def trade(trajectory, startcurrency):
 				fit = wallet(trajectory[i]['base'])
 				# hasViqc = True
 			elif ttype == "base_quote":
-				trtype = "buy"
+				trtype = "sell"
 				fit = wallet(trajectory[i]['quote'])
 				hasViqc = True
 		elif i == 1:
 			if ttype == "base_base":
 				trtype = "buy"
 				fit = wallet(trajectory[i]['quote'])
-				hasViqc = True
+			#	hasViqc = True
 			elif ttype == "quote_quote":
-				trtype = "sell"
+				trtype = "buy"
 				fit = wallet(trajectory[i]['base'])
-				# hasViqc = True
+			        hasViqc = True
 			elif ttype == "quote_base":
 				trtype = "sell"
 				fit = wallet(trajectory[i]['base'])
@@ -74,13 +75,13 @@ def trade(trajectory, startcurrency):
 				hasViqc = True
 		elif i == 2:
 			if ttype == "base_base":
-				trtype = "buy"
+				trtype = "sell"
 				fit = wallet(trajectory[i]['base'])
-				hasViqc = True
+				#hasViqc = True
 			elif ttype == "quote_quote":
-				trtype = "buy"
+				trtype = "sell"
 				fit = wallet(trajectory[i]['quote'])
-				hasViqc = True
+				#hasViqc = True
 			elif ttype == "quote_base":
 				trtype = "sell"
 				fit = wallet(trajectory[i]['quote'])
@@ -88,21 +89,29 @@ def trade(trajectory, startcurrency):
 			elif ttype == "base_quote":
 				trtype = "sell"
 				fit = wallet(trajectory[i]['quote'])
-				# hasViqc = True
+				hasViqc = True
 
+                price = float(db.trade.find_one({ 'quote': trajectory[i]['quote'], 'base': trajectory[i]['base']  })['bid'])
+                
 
 		volume = float(fit)
 
-		print trajectory[i]['base']+"_"+trajectory[i]['quote'], trtype, format(float(volume), '.15f'), ttype
+		print trajectory[i]['base']+"_"+trajectory[i]['quote'], trtype, format(float(volume), '.5f'), ttype
+
+                if trtype == "buy":
+                    out = volume / price
+                    price = out * volume
+
+
 		query = {'pair': trajectory[i]['base']+trajectory[i]['quote'],\
 		 'type': trtype,\
 		 'ordertype': 'market', \
-		 'volume': format(float(volume), '.15f'), \
+		 'volume': format(float(volume), '.5f'), \
 		}
 		if hasViqc:
 			query['oflags'] = 'viqc'
-		print query
 		order = k.query_private('AddOrder', query)
-
-		print order
-		time.sleep(5)
+                print order
+	        if order['error'] != []:
+                    break
+		time.sleep(8)
