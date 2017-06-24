@@ -117,7 +117,9 @@ def evaluate(individual):
 				ttype = [ x[0] for x in trade_types[z].items() if x[1] ][0]
 			except:
 				return 0,
-			fit -= 0.36 * fit
+                        fit -= db.trade.find_one({'quote':gene['quote'],'bid':gene['bid']})['fees']['fees'][0][1]   * fit
+                        if not fit:
+                            return 0,
 			fit = Fraction(fit)
 			if ttype == "base_base":
 				fit = Fraction(1,Fraction(gene['bid']) * fit)
@@ -137,22 +139,24 @@ def evaluate(individual):
 
 	# fit = 1
 	fit = fit.limit_denominator()
-	#convert trade output to bitcoin value
+   
+        if not float(fit):
+            return 0,
+
+	#convert trade output to reference value
+        REFERENCE = "XXBT"
+
 	fttype = None
 	if final[1].split('_')[1] == "quote":
 		fttype = "base"
 	else:
 		fttype = "quote"
 
-	#TODO: HANDLE THIS NICELY
-	#if (final[0]['base'] == "XXBT") or (final[0]['quote'] == "XXBT"):
-	#	return 0,
-
 	reference = {\
-		'base_a' : db.trade.find_one({"base": "XXBT",'quote': final[0][fttype]}),\
-		'quote_a' : db.trade.find_one({"base":final[0][fttype], 'quote': "XXBT"})}.items()
+		'base_a' : db.trade.find_one({"base": REFERENCE,'quote': final[0][fttype]}),\
+		'quote_a' : db.trade.find_one({"base":final[0][fttype], 'quote': REFERENCE})}.items()
 	factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
-	if factor and (factor != []):
+	if factor:
 		factor = factor[0]
 		if (factor[0] == 0) and (fttype == "quote"):
 			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
@@ -168,25 +172,23 @@ def evaluate(individual):
 
 		elif (factor[0] == 1) and (fttype == "base"):
 			factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
-			fit = Fraction(1,fit) * factor[1][1]['bid']
-
+        		fit = Fraction(fit, factor[1][1]['bid'])
+        else:
+            return 0,
 	fitness = fit.limit_denominator()
-	#convert input volume to BTC reference
-	if start != "XXBT":
+	#convert input volume to reference
+	if start != REFERENCE:
 		reference = {\
-			'base_quote' : db.trade.find_one({"base": "XXBT",'quote': start}),\
-			'quote_base' : db.trade.find_one({"base":start, 'quote': "XXBT"})}.items()
+			'base_quote' : db.trade.find_one({"base": REFERENCE,'quote': start}),\
+			'quote_base' : db.trade.find_one({"base":start, 'quote': REFERENCE})}.items()
 		try:
 			factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
 		except:
-                        #print start
 			return 0,
-#		if factor[0] == 0:
-#			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
 		vol *= Fraction(factor[1][1]['bid'])
 	vol = vol.limit_denominator()
         #evolution takes place on the profit expected
-	return float(fitness)-float(vol),
+	return float(fitness-vol),
 
 def run():
 

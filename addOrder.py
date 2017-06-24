@@ -54,7 +54,7 @@ def trade(trajectory, startcurrency):
 				# hasViqc = True
 			elif ttype == "base_quote":
 				trtype = "sell"
-				fit = wallet(trajectory[i]['quote'])
+                                fit = float(Fraction(Fraction(1, db.trade.find_one({'base':trajectory[i]['base'], 'quote':trajectory[i]['quote']})['bid']),  wallet(trajectory[i]['quote'])))
 				hasViqc = True
 		elif i == 1:
 			if ttype == "base_base":
@@ -105,7 +105,7 @@ def trade(trajectory, startcurrency):
 
 		query = {'pair': trajectory[i]['base']+trajectory[i]['quote'],\
 		 'type': trtype,\
-		 'ordertype': 'market', \
+                 'ordertype': 'market', \
 		 'volume': format(float(volume), '.5f'), \
 		}
 		if hasViqc:
