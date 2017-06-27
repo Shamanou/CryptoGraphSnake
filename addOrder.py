@@ -41,7 +41,7 @@ def trade(trajectory, startcurrency):
 
 		if i == 0:
 			if ttype == "base_base":
-				trtype = "buy"
+				trtype = "sell"
 				fit = wallet(trajectory[i]['quote'])
 				hasViqc = True
 			elif ttype == "quote_quote":
@@ -53,39 +53,39 @@ def trade(trajectory, startcurrency):
 				fit = wallet(trajectory[i]['base'])
 				# hasViqc = True
 			elif ttype == "base_quote":
-				trtype = "sell"
-                                fit = float(Fraction(Fraction(1, db.trade.find_one({'base':trajectory[i]['base'], 'quote':trajectory[i]['quote']})['bid']),  wallet(trajectory[i]['quote'])))
+				trtype = "buy"
+				fit = wallet(trajectory[i]['quote'])
 				hasViqc = True
 		elif i == 1:
 			if ttype == "base_base":
 				trtype = "buy"
 				fit = wallet(trajectory[i]['quote'])
-			#	hasViqc = True
+				hasViqc = True
 			elif ttype == "quote_quote":
-				trtype = "buy"
+				trtype = "sell"
 				fit = wallet(trajectory[i]['base'])
-			        hasViqc = True
+				# hasViqc = True
 			elif ttype == "quote_base":
 				trtype = "sell"
 				fit = wallet(trajectory[i]['base'])
 				# hasViqc = True
 			elif ttype == "base_quote":
-				trtype = "sell"
-				fit = wallet(trajectory[i]['quote'])
-				hasViqc = True
+				trtype = "buy"
+				fit = wallet(trajectory[i]['base'])
+				# hasViqc = True
 		elif i == 2:
 			if ttype == "base_base":
 				trtype = "sell"
 				fit = wallet(trajectory[i]['base'])
 				#hasViqc = True
 			elif ttype == "quote_quote":
-				trtype = "sell"
+				trtype = "buy"
 				fit = wallet(trajectory[i]['quote'])
-				#hasViqc = True
+				hasViqc = True
 			elif ttype == "quote_base":
 				trtype = "sell"
 				fit = wallet(trajectory[i]['quote'])
-				# hasViqc = True
+				hasViqc = True
 			elif ttype == "base_quote":
 				trtype = "sell"
 				fit = wallet(trajectory[i]['quote'])
@@ -98,10 +98,11 @@ def trade(trajectory, startcurrency):
 
 		print trajectory[i]['base']+"_"+trajectory[i]['quote'], trtype, format(float(volume), '.5f'), ttype
 
-                if trtype == "buy":
-                    out = volume / price
-                    price = out * volume
+		if trtype == "buy":
+			out = volume / price
+			price = out * volume
 
+		volume -= volume * 0.23
 
 		query = {'pair': trajectory[i]['base']+trajectory[i]['quote'],\
 		 'type': trtype,\
@@ -111,7 +112,7 @@ def trade(trajectory, startcurrency):
 		if hasViqc:
 			query['oflags'] = 'viqc'
 		order = k.query_private('AddOrder', query)
-                print order
-	        if order['error'] != []:
-                    break
-		time.sleep(8)
+		print order
+		if order['error'] != []:
+			break
+		time.sleep(5)

@@ -111,84 +111,90 @@ def evaluate(individual):
 	z = 0
 	final=None
 	ttype = None
+	tmp = 0.0
 	for gene in individual:
 		if not isFirst:
 			try:
 				ttype = [ x[0] for x in trade_types[z].items() if x[1] ][0]
 			except:
 				return 0,
-                        fit -= db.trade.find_one({'quote':gene['quote'],'bid':gene['bid']})['fees']['fees'][0][1]   * fit
-                        if not fit:
-                            return 0,
+				fit -= db.trade.find_one({'quote':gene['quote'],'bid':gene['bid']})['fees']['fees'][0][1]  * fit
+				if not fit:
+					return 0,
 			fit = Fraction(fit)
 			if ttype == "base_base":
-				fit = Fraction(1,Fraction(gene['bid']) * fit)
+				tmp = Fraction(1,Fraction(Fraction(gene['bid']) * fit))
 			elif ttype == "quote_quote":
-				fit *= Fraction(gene['bid'])
+				tmp = fit * Fraction(gene['bid'])
 			elif ttype == "quote_base":
-				fit *= Fraction(1,Fraction(gene['bid']))
+				tmp = Fraction(fit,Fraction(gene['bid']))
 			elif ttype == "base_quote":
-				fit = Fraction(Fraction(gene['bid']),fit)
+				tmp = Fraction(Fraction(gene['bid']),fit)
 			z += 1
 		isFirst = False
 		# print float(fit), ttype, gene
 		final = (gene,ttype)
-                #if float(fit) <= 0.1:
-                #        print float(fit),final
-		#	return 0,
 
-	# fit = 1
-	fit = fit.limit_denominator()
-   
-        if not float(fit):
-            return 0,
+		if not float(fit):
+			return 0,
 
 	#convert trade output to reference value
-        REFERENCE = "XXBT"
+	REFERENCE = "XXBT"
 
-	fttype = None
 	if final[1].split('_')[1] == "quote":
 		fttype = "base"
 	else:
 		fttype = "quote"
 
-	reference = {\
-		'base_a' : db.trade.find_one({"base": REFERENCE,'quote': final[0][fttype]}),\
-		'quote_a' : db.trade.find_one({"base":final[0][fttype], 'quote': REFERENCE})}.items()
-	factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
-	if factor:
-		factor = factor[0]
-		if (factor[0] == 0) and (fttype == "quote"):
-			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
-			fit *= factor[1][1]['bid']
+	if REFERENCE != final[0][fttype]:
+		reference = {\
+			'base_a' : db.trade.find_one({"base": REFERENCE,'quote': final[0][fttype]}),\
+			'quote_a' : db.trade.find_one({"base":final[0][fttype], 'quote': REFERENCE})}.items()
+		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
+		if factor:
+			factor = factor[0]
+			if (factor[0] == 0) and (fttype == "quote"):
+				fit = Fraction(Fraction(1,Fraction(factor[1][1]['bid'])), fit)
+				# print "A:",float(fit)
 
-		elif (factor[0] == 0) and (fttype == "base"):
-			factor[1][1]['bid'] = Fraction(1,Fraction(factor[1][1]['bid']))
-			fit = Fraction(1,fit) * factor[1][1]['bid']
+			elif (factor[0] == 0) and (fttype == "base"):
+				fit = Fraction(Fraction(1,Fraction(factor[1][1]['bid'])), fit)
+				# print "B:",float(fit)
 
-		elif (factor[0] == 1) and (fttype == "quote"):
-			factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
-			fit *= factor[1][1]['bid']
+			elif (factor[0] == 1) and (fttype == "quote"):
+				fit = Fraction(Fraction(factor[1][1]['bid']), fit)
+				# print "C:",float(fit)
 
-		elif (factor[0] == 1) and (fttype == "base"):
-			factor[1][1]['bid'] = Fraction(factor[1][1]['bid'])
-        		fit = Fraction(fit, factor[1][1]['bid'])
-        else:
-            return 0,
-	fitness = fit.limit_denominator()
+			elif (factor[0] == 1) and (fttype == "base"):
+				fit = Fraction(Fraction(factor[1][1]['bid']), fit)
+				# print "D:",float(fit)
+			else:
+				return 0,
+		else:
+			return 0,
+	else:
+		return 0,
 	#convert input volume to reference
 	if start != REFERENCE:
 		reference = {\
 			'base_quote' : db.trade.find_one({"base": REFERENCE,'quote': start}),\
 			'quote_base' : db.trade.find_one({"base":start, 'quote': REFERENCE})}.items()
-		try:
-			factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ][0]
-		except:
+		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
+		if factor:
+			factor = factor[0]
+			if factor[0] == 0:
+				vol = Fraction(Fraction(1,Fraction(factor[1][1]['bid'])) * Fraction(vol))
+
+			elif factor[0] == 1:
+				vol = Fraction(vol, Fraction(1,Fraction(factor[1][1]['bid'])))
+
+		else:
 			return 0,
-		vol *= Fraction(factor[1][1]['bid'])
-	vol = vol.limit_denominator()
-        #evolution takes place on the profit expected
-	return float(fitness-vol),
+	else:
+		vol = Fraction(vol)
+
+    #evolution takes place on the profit expected
+	return float(fit-vol),
 
 def run():
 
