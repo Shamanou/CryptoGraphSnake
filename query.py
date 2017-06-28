@@ -39,7 +39,7 @@ def getStart(pos):
 		else:
 			balance_conv.append((x[0],float(x[1]),float(x[1])))
 
-	balance_conv = sorted(balance_conv, key=operator.itemgetter(1,2), reverse=True)
+	balance_conv = sorted(balance_conv, key=operator.itemgetter(2,1), reverse=True)
 	# print balance_conv
 
 	if pos < len(balance_conv):

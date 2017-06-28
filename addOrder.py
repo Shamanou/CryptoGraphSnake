@@ -102,7 +102,7 @@ def trade(trajectory, startcurrency):
 			out = volume / price
 			price = out * volume
 
-		volume -= volume * 0.23
+		# volume -= volume * 0.23
 
 		query = {'pair': trajectory[i]['base']+trajectory[i]['quote'],\
 		 'type': trtype,\
