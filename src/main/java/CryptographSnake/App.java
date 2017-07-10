@@ -17,7 +17,7 @@ import org.jenetics.Phenotype;
 public class App {	
 	
     public static void main( String[] args ) {
-    	KrakenDbApi<?> api = new KrakenDbApi(new File("src/main/java/CryptographSnake/apikey"));
+    	KrakenDbApi api = new KrakenDbApi(new File(args[0]));
     	System.out.println("\n"
     			+ "\n"
     			+ "			Welcome to the CryptocurrencyGraphSnake\n"
@@ -36,7 +36,7 @@ public class App {
             		+ "			+-----------------------+\n"
             		+ "\n");
             while(true) {
-            for(int i = 0; i < 4; i++) {
+            for(int i = 0; i < 10; i++) {
             	try {
 					HashMap<String, Object> start = api.getStart("ZUSD", i);
 					
@@ -46,10 +46,11 @@ public class App {
 					Evolve e = new Evolve(start, api.getTable());
 					Phenotype<AnyGene<Ticker>, Double>  result = e.run();
 					System.out.println("Results:\n"+ result + "\n");
-					OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start);
+					OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start,args[0]);
 					orderExecutor.setOrder(result);
 					orderExecutor.ExecuteOrder();
             	} catch (Exception e) {
+            		System.out.println(e.getMessage());
 					i = -1;
 				}
             }

@@ -25,11 +25,11 @@ public class OrderExecutor {
 	private Phenotype<AnyGene<Ticker>, Double> order;
 	private KrakenApi api = new KrakenApi();
 	
-	public OrderExecutor(MongoCollection<Ticker> table, HashMap<String,Object> start) throws IOException {
+	public OrderExecutor(MongoCollection<Ticker> table, HashMap<String,Object> start, String k) throws IOException {
 		this.start = start;
 		this.setTable(table);
 		
-		FileReader fileReader = new FileReader("src/main/java/CryptographSnake/apikey");
+		FileReader fileReader = new FileReader(k);
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 		StringBuffer stringBuffer = new StringBuffer();
 		String line;
