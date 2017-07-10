@@ -54,10 +54,14 @@ public class Evolve {
         	int x = 0;
         	for (int z = 0; z < chrom.getChromosome(i).length(); z++) {
         		Ticker ticker = chrom.getChromosome(i).getGene(z).getAllele();
-        		if ( ticker.getTradePair().getBase().equals(start) 
-        				|| ticker.getTradePair().getBase().equals(start) ){
+        		if ( ticker.getTradePair().getBase().equals(start) || 
+        				ticker.getTradePair().getQuote().equals(start) ){
         			
-        			fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
+        			if (ticker.getTradePair().getBase().equals(start)){
+        				fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
+        			} else if (ticker.getTradePair().getQuote().equals(start)){
+        				fit = fit.divide(new BigFraction(ticker.getTickerAsk()));
+        			}
         			
 //        			if (fit.doubleValue() <= 0.01) {
 //        				return 0.0;
@@ -74,16 +78,23 @@ public class Evolve {
         			
         			fitConv = r.getConvertedValue();
         			
+        			r.setReference(ticker.getFeesVolumeCurrency());
+        			r.setReferenceOf(startCurrency);
+        			r.setVolume(startVolume);
+        			
         			fitConv = fitConv.subtract(new BigFraction(fitConv.doubleValue() * ticker.getFeesRaw().get(0).get(0)));        			
-        			prevConv = fitConv.subtract(prevConv);
+        			prevConv = fitConv.subtract(r.getConvertedValue());
         			
 //            		System.out.println(prevConv.doubleValue());
-        			
-        			start = ticker.getTradePair().getQuote();
+        			if (ticker.getTradePair().getBase().equals(start)){
+        				start = ticker.getTradePair().getQuote();
+        			}else if  (ticker.getTradePair().getQuote().equals(start)){
+        				start = ticker.getTradePair().getBase();        				
+        			}
         		} 
-//        		else {
-//        			return 0.0;
-//        		}
+        		else {
+        			return 0.0;
+        		}
         	}
     		list.add( prevConv.doubleValue());
 //        	System.out.println("\n");

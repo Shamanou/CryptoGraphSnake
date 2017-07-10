@@ -47,8 +47,10 @@ public class App {
 					Phenotype<AnyGene<Ticker>, Double>  result = e.run();
 					System.out.println("Results:\n"+ result + "\n");
 					OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start,args[0]);
-					orderExecutor.setOrder(result);
-					orderExecutor.ExecuteOrder();
+					if (result.getFitness() > 0.0) {
+						orderExecutor.setOrder(result);
+						orderExecutor.ExecuteOrder();
+					}
             	} catch (Exception e) {
             		System.out.println(e.getMessage());
 					i = -1;
