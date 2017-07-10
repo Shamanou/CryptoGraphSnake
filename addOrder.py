@@ -16,7 +16,12 @@ client = MongoClient()
 db = client.trade
 
 def wallet(curr):
-	balance = k.query_private('Balance')['result'][curr]
+	while True:
+		try:
+			balance = k.query_private('Balance')['result'][curr]
+			break
+		except:
+			pass
 	return Fraction(balance)
 
 
@@ -41,7 +46,7 @@ def trade(trajectory, startcurrency):
 
 		if i == 0:
 			if ttype == "base_base":
-				trtype = "sell"
+				trtype = "buy"
 				fit = wallet(trajectory[i]['quote'])
 				hasViqc = True
 			elif ttype == "quote_quote":
@@ -71,8 +76,8 @@ def trade(trajectory, startcurrency):
 				# hasViqc = True
 			elif ttype == "base_quote":
 				trtype = "buy"
-				fit = wallet(trajectory[i]['base'])
-				# hasViqc = True
+				fit = wallet(trajectory[i]['quote'])
+				hasViqc = True
 		elif i == 2:
 			if ttype == "base_base":
 				trtype = "sell"
@@ -96,23 +101,31 @@ def trade(trajectory, startcurrency):
 
 		volume = float(fit)
 
-		print trajectory[i]['base']+"_"+trajectory[i]['quote'], trtype, format(float(volume), '.5f'), ttype
+		print trajectory[i]['base']+"_"+trajectory[i]['quote'], trtype, format(float(volume), '.7f'), ttype
 
 		if trtype == "buy":
 			out = volume / price
 			price = out * volume
+		volume -= volume * 0.26
 
-		# volume -= volume * 0.23
 
 		query = {'pair': trajectory[i]['base']+trajectory[i]['quote'],\
 		 'type': trtype,\
                  'ordertype': 'market', \
-		 'volume': format(float(volume), '.5f'), \
+		 'volume': format(float(volume), '.7f'), \
 		}
 		if hasViqc:
 			query['oflags'] = 'viqc'
-		order = k.query_private('AddOrder', query)
+		while True:
+			try:
+				order = k.query_private('AddOrder', query)
+				break
+			except:
+				pass
 		print order
 		if order['error'] != []:
 			break
-		time.sleep(5)
+
+                while k.query_private('OpenOrders')['result']['open'] != {}:
+            		time.sleep(3)
+                time.sleep(1)

@@ -24,10 +24,10 @@ def generateIndividual(icls):
 	while True:
 		try:
 			genesecond = \
-			 list(db.trade.find({"base":genestart[u'quote']})) +\
-			 list(db.trade.find({"quote":genestart[u'base']})) +\
-			 list(db.trade.find({"base":genestart[u'base']})) +\
-			 list(db.trade.find({"quote":genestart[u'quote']}))
+			list(db.trade.find({"base":genestart[u'quote']})) +\
+			list(db.trade.find({"quote":genestart[u'base']})) +\
+			list(db.trade.find({"base":genestart[u'base']})) +\
+			list(db.trade.find({"quote":genestart[u'quote']}))
 			genesecond = genesecond[random.randint(0,len(genesecond)-1)]
 			genethird = \
 			list(db.trade.find({"base":genesecond[u'quote']})) +\
@@ -59,7 +59,6 @@ def evaluate(individual):
 	factor = None
 	isFirst = True
 	isValid = False
-	fitness = None
 
 	if ((individual[0]['base'] != start) and (individual[0]['quote'] != start)):
 		return 0,
@@ -74,9 +73,10 @@ def evaluate(individual):
 	elif (individual[0]['quote'] == individual[1]['base']) or (individual[0]['quote'] == individual[1]['quote']):
 		if start == individual[0]['quote']:
 			return 0,
+	elif (individual[2]['quote'] != start) and (individual[2]['base'] != start):
+		return 0,
 	else:
 		return 0,
-
 
 	curlist = []
 	for i,j in zip(range(0,len(individual)-1),range(1,len(individual))):
@@ -111,7 +111,7 @@ def evaluate(individual):
 	z = 0
 	final=None
 	ttype = None
-	tmp = 0.0
+	tmp = 0
 	for gene in individual:
 		if not isFirst:
 			try:
@@ -122,16 +122,18 @@ def evaluate(individual):
 				if not fit:
 					return 0,
 			fit = Fraction(fit)
+			gene['bid'] = Fraction(gene['bid'])
 			if ttype == "base_base":
-				tmp = Fraction(1,Fraction(Fraction(gene['bid']) * fit))
+				fit *= Fraction(gene['bid'])
 			elif ttype == "quote_quote":
-				tmp = fit * Fraction(gene['bid'])
+				fit = Fraction(1,Fraction(gene['bid'] * fit))
 			elif ttype == "quote_base":
-				tmp = Fraction(fit,Fraction(gene['bid']))
+				fit = Fraction(gene['bid'],fit)
 			elif ttype == "base_quote":
-				tmp = Fraction(Fraction(gene['bid']),fit)
+				fit = Fraction(fit,gene['bid'])
 			z += 1
 		isFirst = False
+		# fit = fit.limit_denominator()
 		# print float(fit), ttype, gene
 		final = (gene,ttype)
 
@@ -141,60 +143,45 @@ def evaluate(individual):
 	#convert trade output to reference value
 	REFERENCE = "XXBT"
 
-	if final[1].split('_')[1] == "quote":
-		fttype = "base"
-	else:
-		fttype = "quote"
+	fttype = final[1].split('_')[1]
 
 	if REFERENCE != final[0][fttype]:
-		reference = {\
-			'base_a' : db.trade.find_one({"base": REFERENCE,'quote': final[0][fttype]}),\
-			'quote_a' : db.trade.find_one({"base":final[0][fttype], 'quote': REFERENCE})}.items()
-		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
+		reference = {'quote_base' : db.trade.find_one({"base":final[0][fttype], 'quote': REFERENCE})}.items()
+		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1] ]
 		if factor:
 			factor = factor[0]
-			if (factor[0] == 0) and (fttype == "quote"):
-				fit = Fraction(Fraction(1,Fraction(factor[1][1]['bid'])), fit)
-				# print "A:",float(fit)
-
-			elif (factor[0] == 0) and (fttype == "base"):
-				fit = Fraction(Fraction(1,Fraction(factor[1][1]['bid'])), fit)
-				# print "B:",float(fit)
-
-			elif (factor[0] == 1) and (fttype == "quote"):
-				fit = Fraction(Fraction(factor[1][1]['bid']), fit)
-				# print "C:",float(fit)
-
-			elif (factor[0] == 1) and (fttype == "base"):
-				fit = Fraction(Fraction(factor[1][1]['bid']), fit)
-				# print "D:",float(fit)
+			if fttype == "base":
+				# print factor[1][1]['bid'] ,float(fit)
+				fit = Fraction(Fraction(factor[1][1]['bid']).limit_denominator(), fit)
 			else:
-				return 0,
+				# print factor[1][1]['bid'] ,float(fit)
+				# fit = Fraction(fit,Fraction(factor[1][1]['bid']).limit_denominator())
+				return 0, # TODO: solve bugs in evolution which cause weird fitness outcomes
 		else:
 			return 0,
 	else:
 		return 0,
-	#convert input volume to reference
-	if start != REFERENCE:
-		reference = {\
-			'base_quote' : db.trade.find_one({"base": REFERENCE,'quote': start}),\
-			'quote_base' : db.trade.find_one({"base":start, 'quote': REFERENCE})}.items()
-		factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
-		if factor:
-			factor = factor[0]
-			if factor[0] == 0:
-				vol = Fraction(Fraction(1,Fraction(factor[1][1]['bid'])) * Fraction(vol))
-
-			elif factor[0] == 1:
-				vol = Fraction(vol, Fraction(1,Fraction(factor[1][1]['bid'])))
-
+	fit = fit.limit_denominator()
+	# convert input volume to output value
+	reference = {\
+    	'base_quote' : db.trade.find_one({"base": REFERENCE,'quote': start}),\
+		'quote_base' : db.trade.find_one({"base":start, 'quote':  REFERENCE })}.items()
+	factor = [ (i,reference[i]) for i in range(len(reference)) if reference[i][1]]
+	if factor:
+		factor = factor[0]
+		if factor[0] == 0:
+			vol = Fraction(1,Fraction(vol)) * Fraction(1,Fraction(factor[1][1]['bid']))
+		elif factor[0] == 1:
+			vol = Fraction(vol) * Fraction(factor[1][1]['bid'])
 		else:
 			return 0,
 	else:
-		vol = Fraction(vol)
-
-    #evolution takes place on the profit expected
-	return float(fit-vol),
+		return 0,
+	# evolution takes place on the profit expected
+	if float(fit-vol) >= 1.0:
+		return 0, 
+	else:
+		return float(fit.limit_denominator())-float(vol.limit_denominator()),
 
 def run():
 
@@ -212,7 +199,7 @@ def run():
 	stats.register("min", numpy.min)
 	stats.register("max", numpy.max)
 
-	pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.3, ngen=20, stats=stats, halloffame=hof, verbose=True)
+	pop, log = algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.3, ngen=10, stats=stats, halloffame=hof, verbose=True)
 	pop = [ i for i in pop if i.fitness.values[0] > 0 ]
 	if len(pop) > 0:	
 		pop = sorted(pop, key=lambda ind:ind.fitness.values[0], reverse=True)

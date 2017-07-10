@@ -11,8 +11,13 @@ trade_collection = client.trade.trade
 
 
 def getCurrencyPairs():
-    res = requests.get('https://api.kraken.com/0/public/AssetPairs').json()['result'].keys()
-    return [ x for x in res if x[:3] != u"GNO" ]
+	while True:
+		try:
+			res = requests.get('https://api.kraken.com/0/public/AssetPairs').json()['result'].keys()
+			break
+		except:
+			pass
+	return [ x for x in res if ((x[:3] != u"GNO") and (x[:3] != u"DASH")) ]
 
 def getTickerInformation(pairs):
 	ticker = requests.post('https://api.kraken.com/0/public/Ticker',data = {'pair': ','.join(pairs)}).json()['result']
@@ -54,38 +59,21 @@ while True:
 	print "			GRABBING TRADE START VALUE"
 	print "			+-----------------------+"
 	print ""
-	start = query.getStart(0)
-	print "			+-----------------------+"
-	print "			EVOLVING TRADE TRAJECTORY nr. 1"
-	print "			+-----------------------+"
-	print ""
-	evolve.setStart_Volume(start[0],start[1])
-	winners = evolve.run()
-	print "			+-----------------------+"
-	print "			EXECUTING ORDERS"
-	print "			+-----------------------+"
-	if winners:
-	    for winner in winners:
-	        addOrder.trade(winner,start)
-	else:
-		print "no suitable trajectories" 
 
-	print "			+-----------------------+"
-	print "			GRABBING TRADE START VALUE"
-	print "			+-----------------------+"
-	print ""
-	start = query.getStart(1)
-	print "			+-----------------------+"
-	print "			EVOLVING TRADE TRAJECTORY nr. 2"
-	print "			+-----------------------+"
-	print ""
-	evolve.setStart_Volume(start[0],start[1])
-	winners = evolve.run()
-	print "			+-----------------------+"
-	print "			EXECUTING ORDERS"
-	print "			+-----------------------+"
-	if winners:
-		for winner in winners:
-			addOrder.trade(winner,start)
-	else:
-		print "no suitable trajectories" 
+	for x in range(10):
+		start = query.getStart(x)
+		print "			+-----------------------+"
+		print "			EVOLVING TRADE TRAJECTORY nr. " + str(x)
+		print "			+-----------------------+"
+		print ""
+		evolve.setStart_Volume(start[0],start[1])
+		winners = evolve.run()
+		print "			+-----------------------+"
+		print "			EXECUTING ORDERS"
+		print "			+-----------------------+"
+		# if winners:
+		# 	for winner in winners:
+		# 		addOrder.trade(winner,start)
+		# 		break
+		# else:
+		# 	print "no suitable trajectories" 
