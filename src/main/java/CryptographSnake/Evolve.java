@@ -57,6 +57,10 @@ public class Evolve {
         		if ( ticker.getTradePair().getBase().equals(start) || 
         				ticker.getTradePair().getQuote().equals(start) ){
         			
+//        			if (fit.doubleValue() <= 0.01) {
+//        				return 0.0;
+//        			}
+        			
         			if (ticker.getTradePair().getBase().equals(start)){
         				fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
         			} else if (ticker.getTradePair().getQuote().equals(start)){
@@ -84,6 +88,12 @@ public class Evolve {
         			
         			fitConv = fitConv.subtract(new BigFraction(fitConv.doubleValue() * ticker.getFeesRaw().get(0).get(0)));        			
         			prevConv = fitConv.subtract(r.getConvertedValue());
+        			
+        			r.setReference("ZUSD");
+        			r.setReferenceOf(ticker.getFeesVolumeCurrency());
+        			r.setVolume(prevConv);        			
+        			
+        			prevConv = r.getConvertedValue();
         			
 //            		System.out.println(prevConv.doubleValue());
         			if (ticker.getTradePair().getBase().equals(start)){

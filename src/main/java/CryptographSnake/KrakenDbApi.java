@@ -13,6 +13,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -114,7 +115,7 @@ public class KrakenDbApi<CodecRegistry> {
 		return IteratorUtils.toList(this.request(url,"GET").keys());
 	}
 	
-	public HashMap<String, Object> getStart(String REFERENCE, int n) throws IOException, java.security.InvalidKeyException, NoSuchAlgorithmException {
+	public ArrayList<HashMap<String, Object>> getStart(String REFERENCE) throws IOException, java.security.InvalidKeyException, NoSuchAlgorithmException {
 		FileReader fileReader = new FileReader(this.apikey);
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 		StringBuffer stringBuffer = new StringBuffer();
@@ -139,31 +140,13 @@ public class KrakenDbApi<CodecRegistry> {
 		while(walletKeys.hasNext()) {
 			String walletKey = walletKeys.next();
 			double walletValue = wallet.getDouble(walletKey);
-			if (!walletKey.equals(REFERENCE)) {
-				Reference ref = new Reference(this.table);
-				ref.setReference(REFERENCE);
-				ref.setReferenceOf(walletKey);
-				ref.setVolume(new BigFraction(walletValue));
 				if (walletValue > 0.0) {
-					BigFraction valConv = ref.getConvertedValue();
-					if (valConv.doubleValue() > 0.0) {
-						HashMap<String,Object> map = new HashMap<String, Object>();
-						map.put("volume_converted", valConv);
-						map.put("currency", walletKey);
-						map.put("volume", new BigFraction(walletValue));
-						walletValues.add(map);
-					}
+					HashMap<String,Object> map = new HashMap<String, Object>();
+					map.put("currency", walletKey);
+					map.put("volume", new BigFraction(walletValue));
+					walletValues.add(map);
 				}
-			}
 		}
-		
-		walletValues.sort((HashMap<String,Object> z1, HashMap<String,Object> z2) -> {
-			if (((BigFraction)z1.get("volume_converted")).doubleValue() > ((BigFraction)z2.get("volume_converted")).doubleValue())
-				return 1;
-			if (((BigFraction)z1.get("volume_converted")).doubleValue() < ((BigFraction)z2.get("volume_converted")).doubleValue())
-				return -1;
-			return 0;
-		});
 
 		walletValues.sort((HashMap<String,Object> z1, HashMap<String,Object> z2) -> {
 			if (((BigFraction)z1.get("volume")).doubleValue() > ((BigFraction)z2.get("volume")).doubleValue())
@@ -172,8 +155,10 @@ public class KrakenDbApi<CodecRegistry> {
 				return -1;
 			return 0;
 		});
-		
-		return walletValues.get(n);
+//		System.out.println("before - " + walletValues);
+		Collections.reverse(walletValues);
+//		System.out.println("after - " + walletValues);
+		return walletValues;
 	}
 	
 	public void getTickerInformation() throws IOException{

@@ -33,6 +33,12 @@ public class Reference {
 	}
 	
 	public BigFraction getConvertedValue() {
+		
+		if (this.referenceOf.equals(this.reference)) {
+			return this.volume;
+		}
+		
+		
 		Bson filter = Filters.or(
 				Filters.and(
 						Filters.eq("pair.base", this.reference), Filters.eq("pair.quote", this.referenceOf)
@@ -45,7 +51,11 @@ public class Reference {
 			Ticker result = this.table.find(filter, Ticker.class).sort(sort).into(new ArrayList<Ticker>()).get(0);
 			
 			if (result.getTickerAsk() > 0.0) {
-				return this.volume.divide(new BigFraction(result.getTickerAsk()));
+    			if (reference.equals(result.getTradePair().getBase())){
+    				return this.volume.multiply(new BigFraction(result.getTickerAsk()));
+    			} else if (reference.equals(result.getTradePair().getQuote())){
+    				return this.volume.divide(new BigFraction(result.getTickerAsk()));
+    			}
 			}
 		}
 		return new BigFraction(0.0);

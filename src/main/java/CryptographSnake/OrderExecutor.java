@@ -68,7 +68,6 @@ public class OrderExecutor {
 				System.out.print(this.api.queryPrivate(Method.ADD_ORDER, parameters));
 				inval = val.getTradePair().getBase();
 			} else if (inval.equals(val.getTradePair().getBase())) {
-				
 				HashMap<String, String> parameters = new HashMap<String,String>();
 				parameters.put("type", "sell");
 				parameters.put("ordertype", "market");
@@ -78,6 +77,11 @@ public class OrderExecutor {
 				inval = val.getTradePair().getQuote();
 			} 
 			System.out.print("\n");
+			try {
+				Thread.sleep(1500);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		
 	}

@@ -2,8 +2,7 @@ package CryptographSnake;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.jenetics.AnyGene;
@@ -36,12 +35,14 @@ public class App {
             		+ "			+-----------------------+\n"
             		+ "\n");
             while(true) {
-            for(int i = 0; i < 10; i++) {
+            	boolean walletIsProfitable = true;
+            	int i = 0;
+            	while (walletIsProfitable){
             	try {
-					HashMap<String, Object> start = api.getStart("ZUSD", i);
-					
+					ArrayList<HashMap<String, Object>> wallet = api.getStart("ZUSD");
+					HashMap<String, Object> start = wallet.get(i++);
 					System.out.println("			+-----------------------+\n"
-							+ "			EVOLVING TRADE TRAJECTORY nr. " + String.valueOf(i) + "\n"
+							+ "			EVOLVING TRADE TRAJECTORY nr. " + String.valueOf(i) + " - "+ (String)start.get("currency") +"\n"
 							+ "			+-----------------------+\n\n");
 					Evolve e = new Evolve(start, api.getTable());
 					Phenotype<AnyGene<Ticker>, Double>  result = e.run();
@@ -54,6 +55,7 @@ public class App {
             	} catch (Exception e) {
             		System.out.println(e.getMessage());
 					i = -1;
+					walletIsProfitable = false;
 				}
             }
             }
