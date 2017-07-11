@@ -77,10 +77,19 @@ public class OrderExecutor {
 				inval = val.getTradePair().getQuote();
 			} 
 			System.out.print("\n");
-			try {
-				Thread.sleep(1500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			double tmp = 0;
+			while(tmp <= 0.0) {
+				if (inval.equals(val.getTradePair().getBase())) {
+					tmp =(new JSONObject(this.api.queryPrivate(Method.BALANCE)).getJSONObject("result").getDouble(val.getTradePair().getQuote()));
+				}else {
+					tmp =(new JSONObject(this.api.queryPrivate(Method.BALANCE)).getJSONObject("result").getDouble(val.getTradePair().getBase()));
+				}
+				try {
+					Thread.sleep(10000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
 			}
 		}
 		
