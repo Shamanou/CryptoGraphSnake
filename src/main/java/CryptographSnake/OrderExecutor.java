@@ -78,16 +78,21 @@ public class OrderExecutor {
 			} 
 			System.out.print("\n");
 			double tmp = 0;
+			int i = 0;
 			while(tmp <= 0.0) {
+				i++;
 				if (inval.equals(val.getTradePair().getBase())) {
-					tmp =(new JSONObject(this.api.queryPrivate(Method.BALANCE)).getJSONObject("result").getDouble(val.getTradePair().getQuote()));
-				}else {
 					tmp =(new JSONObject(this.api.queryPrivate(Method.BALANCE)).getJSONObject("result").getDouble(val.getTradePair().getBase()));
+				}else {
+					tmp =(new JSONObject(this.api.queryPrivate(Method.BALANCE)).getJSONObject("result").getDouble(val.getTradePair().getQuote()));
 				}
 				try {
-					Thread.sleep(10000);
+					Thread.sleep(80);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
+				}
+				if (i >= 5) {
+					break;
 				}
 
 			}

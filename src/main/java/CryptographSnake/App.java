@@ -35,15 +35,14 @@ public class App {
             		+ "			+-----------------------+\n"
             		+ "\n");
             while(true) {
-            	boolean walletIsProfitable = true;
             	int i = 0;
-            	while (walletIsProfitable){
             	try {
-					ArrayList<HashMap<String, Object>> wallet = api.getStart("ZUSD");
-					HashMap<String, Object> start = wallet.get(i++);
+					ArrayList<HashMap<String, Object>> wallet = api.getStart("XXBT");
+					HashMap<String, Object> start = wallet.get(i);
 					System.out.println("			+-----------------------+\n"
 							+ "			EVOLVING TRADE TRAJECTORY nr. " + String.valueOf(i) + " - "+ (String)start.get("currency") +"\n"
 							+ "			+-----------------------+\n\n");
+					i++;
 					Evolve e = new Evolve(start, api.getTable());
 					Phenotype<AnyGene<Ticker>, Double>  result = e.run();
 					System.out.println("Results:\n"+ result + "\n");
@@ -55,9 +54,7 @@ public class App {
             	} catch (Exception e) {
             		System.out.println(e.getMessage());
 					i = -1;
-					walletIsProfitable = false;
 				}
-            }
             }
     	}
     }

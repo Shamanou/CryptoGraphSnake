@@ -5,8 +5,10 @@ import static org.jenetics.engine.EvolutionResult.toBestPhenotype;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.apache.commons.math3.fraction.BigFraction;
 import org.bson.conversions.Bson;
@@ -22,6 +24,7 @@ import org.jenetics.engine.Engine;
 import org.jenetics.engine.EvolutionResult;
 import org.jenetics.engine.EvolutionStatistics;
 import org.jenetics.engine.limit;
+import org.jenetics.util.ISeq;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -45,53 +48,43 @@ public class Evolve {
 	
     private static Double eval(Genotype<AnyGene<Ticker>> chrom) {
     	BigFraction fitConv = new BigFraction(0.0);
-    	ArrayList<Double> list = new ArrayList<Double>();
-    	for (int i = 0; i < chrom.length(); i++) {
-        	Ticker inval = chrom.getChromosome(0).getGene(0).getAllele();
-        	BigFraction fit = startVolume;
-        	String start = Evolve.startCurrency; 
-        	BigFraction prevConv = startVolumeConv; 
-        	int x = 0;
-        	for (int z = 0; z < chrom.getChromosome(i).length(); z++) {
-        		Ticker ticker = chrom.getChromosome(i).getGene(z).getAllele();
+    	String start = Evolve.startCurrency; 
+		Reference r = new Reference(Evolve.table);
+        Ticker inval = chrom.getChromosome().getGene(0).getAllele();
+        BigFraction fit = startVolume;
+        BigFraction prevConv = startVolumeConv; 
+        List<AnyGene<Ticker>> list = chrom.getChromosome().toSeq().asList();
+        for (int z = 0; z < list.size(); z++) {
+        		Ticker ticker = list.get(z).getAllele();
         		if ( ticker.getTradePair().getBase().equals(start) || 
         				ticker.getTradePair().getQuote().equals(start) ){
         			
-//        			if (fit.doubleValue() <= 0.01) {
-//        				return 0.0;
-//        			}
-        			
         			if (ticker.getTradePair().getBase().equals(start)){
-        				fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
-        			} else if (ticker.getTradePair().getQuote().equals(start)){
         				fit = fit.divide(new BigFraction(ticker.getTickerAsk()));
+        			} else if (ticker.getTradePair().getQuote().equals(start)){
+        				fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
         			}
         			
-//        			if (fit.doubleValue() <= 0.01) {
-//        				return 0.0;
-//        			}
         			
-//        			System.out.println(startVolumeConv.doubleValue());
+//        			System.out.println(fit.doubleValue());
 //        			System.out.println(ticker.getTradePair().getBase()+ticker.getTradePair().getQuote());
-//            		System.out.println(fit.doubleValue());
-        			
-        			Reference r = new Reference(Evolve.table);
-        			r.setReference(ticker.getFeesVolumeCurrency());
+//        			
+        			r.setReference("XXBT");
         			r.setReferenceOf(start);
         			r.setVolume(fit);
         			
         			fitConv = r.getConvertedValue();
+        			fitConv = fitConv.subtract(new BigFraction(fitConv.doubleValue() * ticker.getFeesRaw().get(0).get(0)));
         			
-        			r.setReference(ticker.getFeesVolumeCurrency());
+        			r.setReference("XXBT");
         			r.setReferenceOf(startCurrency);
         			r.setVolume(startVolume);
         			
-        			fitConv = fitConv.subtract(new BigFraction(fitConv.doubleValue() * ticker.getFeesRaw().get(0).get(0)));        			
         			prevConv = fitConv.subtract(r.getConvertedValue());
+
         			
-        			r.setReference("ZUSD");
-        			r.setReferenceOf(ticker.getFeesVolumeCurrency());
-        			r.setVolume(prevConv);        			
+//        			System.out.println(r.getConvertedValue());
+        			      			
         			
         			prevConv = r.getConvertedValue();
         			
@@ -103,17 +96,14 @@ public class Evolve {
         			}
         		} 
         		else {
-        			return 0.0;
+//        			return 0.0;
         		}
         	}
-    		list.add( prevConv.doubleValue());
+			r.setReference("XXBT");
+			r.setReferenceOf(start);
+			r.setVolume(prevConv);  
 //        	System.out.println("\n");
-    	}
-    	if (list.size() > 0) {
-    		return Collections.max(list);
-    	} else {
-    		return 0.0;
-    	}
+    		return prevConv.doubleValue();
     }
 	
 	private static Ticker getRandomTicker() {
