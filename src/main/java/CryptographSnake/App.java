@@ -2,9 +2,9 @@ package CryptographSnake;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import org.jenetics.AnyGene;
 import org.jenetics.Phenotype;
 
@@ -16,7 +16,10 @@ import org.jenetics.Phenotype;
 public class App {	
 	
     public static void main( String[] args ) {
-    	KrakenDbApi api = new KrakenDbApi(new File(args[0]));
+    	String APIKEY = args[0];
+    	
+    	
+    	KrakenDbApi api = new KrakenDbApi(new File(APIKEY));
     	System.out.println("\n"
     			+ "\n"
     			+ "			Welcome to the CryptocurrencyGraphSnake\n"
@@ -34,8 +37,8 @@ public class App {
             		+ "			GRABBING TRADE START VALUE\n"
             		+ "			+-----------------------+\n"
             		+ "\n");
+        	int i = 0;
             while(true) {
-            	int i = 0;
             	try {
 					ArrayList<HashMap<String, Object>> wallet = api.getStart("XXBT");
 					HashMap<String, Object> start = wallet.get(i);
@@ -46,15 +49,15 @@ public class App {
 					Evolve e = new Evolve(start, api.getTable());
 					Phenotype<AnyGene<Ticker>, Double>  result = e.run();
 					System.out.println("Results:\n"+ result + "\n");
-					OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start,args[0]);
+					OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start,APIKEY);
 					if (result.getFitness() > 0.0) {
 						orderExecutor.setOrder(result);
 						orderExecutor.ExecuteOrder();
 					}
-            	} catch (Exception e) {
+            	} catch (IOException | java.security.InvalidKeyException | NoSuchAlgorithmException | IndexOutOfBoundsException e ) {
             		System.out.println(e.getMessage());
-					i = -1;
-				}
+            		i= 0;
+				} 
             }
     	}
     }

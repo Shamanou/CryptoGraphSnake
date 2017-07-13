@@ -140,12 +140,12 @@ public class KrakenDbApi<CodecRegistry> {
 		while(walletKeys.hasNext()) {
 			String walletKey = walletKeys.next();
 			double walletValue = wallet.getDouble(walletKey);
-				if (walletValue > 0.0) {
-					HashMap<String,Object> map = new HashMap<String, Object>();
-					map.put("currency", walletKey);
-					map.put("volume", new BigFraction(walletValue));
-					walletValues.add(map);
-				}
+			if (walletValue > 0.0) {
+				HashMap<String,Object> map = new HashMap<String, Object>();
+				map.put("currency", walletKey);
+				map.put("volume", new BigFraction(walletValue));
+				walletValues.add(map);
+			}
 		}
 
 		walletValues.sort((HashMap<String,Object> z1, HashMap<String,Object> z2) -> {
@@ -177,13 +177,15 @@ public class KrakenDbApi<CodecRegistry> {
 				ticker.setTickerAsk( tickers.getJSONObject(pairs.get(i)).getJSONArray("a").getDouble(0) );
 				ticker.setTickerBid( tickers.getJSONObject(pairs.get(i)).getJSONArray("b").getDouble(0) );
 				ticker.setFeesVolumeCurrency( assetPairs.getJSONObject(pairs.get(i)).getString("fee_volume_currency")  );
-				if (pairs.get(i).substring(0,1).equals("X")) {
-					ticker.setTradePair(new TradePair(pairs.get(i).substring(0,4), pairs.get(i).substring(4,8)));
-				}else if (pairs.get(i).substring(0,4).equals("DASH")){
-					ticker.setTradePair(new TradePair(pairs.get(i).substring(0,4), pairs.get(i).substring(4,7)));
-				} else {
-					ticker.setTradePair(new TradePair(pairs.get(i).substring(0,3), pairs.get(i).substring(3,6)));
-				}
+					if (pairs.get(i).substring(0,1).equals("X")) {
+						ticker.setTradePair(new TradePair(pairs.get(i).substring(0,4), pairs.get(i).substring(4,8)));	
+					} else if(pairs.get(i).substring(0,4).equals("USDT")){
+						ticker.setTradePair(new TradePair(pairs.get(i).substring(0,4), pairs.get(i).substring(4,8)));
+					}else if (pairs.get(i).substring(0,4).equals("DASH")){
+						ticker.setTradePair(new TradePair(pairs.get(i).substring(0,4), pairs.get(i).substring(4,7)));
+					} else {
+						ticker.setTradePair(new TradePair(pairs.get(i).substring(0,3), pairs.get(i).substring(3,6)));
+					}
 				table.insertOne(ticker);
 			}
 		}

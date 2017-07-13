@@ -89,7 +89,7 @@ public class OrderExecutor {
 				try {
 					Thread.sleep(80);
 				} catch (InterruptedException e) {
-					e.printStackTrace();
+					System.out.println(e.getMessage());;
 				}
 				if (i >= 5) {
 					break;
