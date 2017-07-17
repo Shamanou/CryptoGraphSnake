@@ -97,10 +97,10 @@ public class DbApi<CodecRegistry> {
 		while(keyIt.hasNext()) {
 			Currency key = (Currency ) keyIt.next();
 		
-			if (wallet.get(key).getAvailable().doubleValue() > 0.0) {
+			if (wallet.get(key).getTotal().doubleValue() > 0.0) {
 				HashMap<String,Object> map = new HashMap<String, Object>();
 				map.put("currency", key);
-				map.put("value", wallet.get(key).getAvailable() );
+				map.put("value", wallet.get(key).getTotal() );
 				wv.add(map);
 			}
 		}

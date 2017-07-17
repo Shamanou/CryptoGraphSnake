@@ -80,19 +80,29 @@ public class OrderExecutor {
 		String inval =  ((Currency)this.start.get("currency")).getCurrencyCode();
 		while(it.hasNext()) {
 			Ticker val = it.next().getAllele();
+			MarketOrder order = null;
 			if (inval.equals(val.getTradePair().getQuote())) {
-				MarketOrder order = new MarketOrder(OrderType.ASK,accountService.getAccountInfo().getWallet().getBalance(
-						new Currency(inval)).getAvailable(), 
+				
+				log.debug(accountService.getAccountInfo().getWallet().getBalance(
+						new Currency(inval)).getTotal());
+				
+				order = new MarketOrder(OrderType.BID,accountService.getAccountInfo().getWallet().getBalance(
+						new Currency(inval)).getTotal(), 
 						new CurrencyPair( val.getTradePair().getBase(), val.getTradePair().getQuote()));
-				this.tradeService.placeMarketOrder(order);
 				inval = val.getTradePair().getBase();
 			} else if (inval.equals(val.getTradePair().getBase())) {
-				MarketOrder order = new MarketOrder(OrderType.BID,accountService.getAccountInfo().getWallet().getBalance(
-						new Currency(inval)).getAvailable(), 
+				order = new MarketOrder(OrderType.ASK,accountService.getAccountInfo().getWallet().getBalance(
+						new Currency(inval)).getTotal(), 
 						new CurrencyPair( val.getTradePair().getBase(), val.getTradePair().getQuote()));
-				this.tradeService.placeMarketOrder(order);
 				inval = val.getTradePair().getQuote();
 			} 
+			try {
+				this.tradeService.placeMarketOrder(order);
+			} catch(Exception ex) {
+				log.warn(ex.getMessage());
+				break;
+			}
+			
 			log.debug("\n");
 			double tmp = 0;
 			int i = 0;
