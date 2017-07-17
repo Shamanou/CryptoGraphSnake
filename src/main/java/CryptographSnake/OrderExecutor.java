@@ -8,11 +8,24 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.jenetics.AnyGene;
 import org.jenetics.Chromosome;
 import org.jenetics.Genotype;
 import org.jenetics.Phenotype;
 import org.json.JSONObject;
+import org.knowm.xchange.Exchange;
+import org.knowm.xchange.ExchangeFactory;
+import org.knowm.xchange.ExchangeSpecification;
+import org.knowm.xchange.currency.Currency;
+import org.knowm.xchange.currency.CurrencyPair;
+import org.knowm.xchange.dto.Order.OrderType;
+import org.knowm.xchange.dto.trade.MarketOrder;
+import org.knowm.xchange.kraken.KrakenExchange;
+import org.knowm.xchange.service.account.AccountService;
+import org.knowm.xchange.service.marketdata.MarketDataService;
+import org.knowm.xchange.service.trade.TradeService;
 
 import com.mongodb.client.MongoCollection;
 
@@ -24,6 +37,12 @@ public class OrderExecutor {
 	private HashMap<String,Object> start;
 	private Phenotype<AnyGene<Ticker>, Double> order;
 	private KrakenApi api = new KrakenApi();
+	private final Logger log = LogManager.getLogger(OrderExecutor.class);
+	private  Exchange kraken = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
+	private  MarketDataService marketDataService;
+	private TradeService tradeService;
+	private  AccountService accountService;
+
 	
 	public OrderExecutor(MongoCollection<Ticker> table, HashMap<String,Object> start, String k) throws IOException {
 		this.start = start;
@@ -39,10 +58,15 @@ public class OrderExecutor {
 		}
 		fileReader.close();
 		String[] key = stringBuffer.toString().split("\n");
-				
-        api.setKey(key[0]);
-		api.setSecret(key[1]);
-		
+			
+	
+		ExchangeSpecification exchangeSpecification = new ExchangeSpecification(KrakenExchange.class.getName());
+		exchangeSpecification.setApiKey(key[0]);
+		exchangeSpecification.setSecretKey(key[1]);
+		kraken.applySpecification(exchangeSpecification);
+		tradeService = kraken.getTradeService();
+		marketDataService = kraken.getMarketDataService();
+		accountService = kraken.getAccountService();		
 	}
 
 	public void setOrder(Phenotype<AnyGene<Ticker>, Double> result) {
@@ -53,30 +77,23 @@ public class OrderExecutor {
 		Genotype<AnyGene<Ticker>> gt = this.order.getGenotype();
 		Chromosome<AnyGene<Ticker>> chrom = gt.getChromosome();
 		Iterator<AnyGene<Ticker>> it = chrom.iterator();
-		String inval = (String) this.start.get("currency");
+		String inval =  ((Currency)this.start.get("currency")).getCurrencyCode();
 		while(it.hasNext()) {
 			Ticker val = it.next().getAllele();
-			System.out.print(val.getTradePair().getBase() + val.getTradePair().getQuote() +"	");
-//			System.out.println(this.api.queryPrivate(Method.BALANCE));
 			if (inval.equals(val.getTradePair().getQuote())) {
-				HashMap<String, String> parameters = new HashMap<String,String>();
-				parameters.put("type", "buy");
-				parameters.put("ordertype", "market");
-				parameters.put("pair", val.getTradePair().getBase() + val.getTradePair().getQuote());
-				parameters.put("volume", String.valueOf((new JSONObject(this.api.queryPrivate(Method.BALANCE)).getJSONObject("result").getDouble(val.getTradePair().getQuote()))) );
-				parameters.put("oflags", "viqc");
-				System.out.print(this.api.queryPrivate(Method.ADD_ORDER, parameters));
+				MarketOrder order = new MarketOrder(OrderType.ASK,accountService.getAccountInfo().getWallet().getBalance(
+						new Currency(inval)).getAvailable(), 
+						new CurrencyPair( val.getTradePair().getBase(), val.getTradePair().getQuote()));
+				this.tradeService.placeMarketOrder(order);
 				inval = val.getTradePair().getBase();
 			} else if (inval.equals(val.getTradePair().getBase())) {
-				HashMap<String, String> parameters = new HashMap<String,String>();
-				parameters.put("type", "sell");
-				parameters.put("ordertype", "market");
-				parameters.put("pair", val.getTradePair().getBase() + val.getTradePair().getQuote());
-				parameters.put("volume", String.valueOf((new JSONObject(this.api.queryPrivate(Method.BALANCE)).getJSONObject("result").getDouble(val.getTradePair().getBase()))) );
-				System.out.print(this.api.queryPrivate(Method.ADD_ORDER, parameters));
+				MarketOrder order = new MarketOrder(OrderType.BID,accountService.getAccountInfo().getWallet().getBalance(
+						new Currency(inval)).getAvailable(), 
+						new CurrencyPair( val.getTradePair().getBase(), val.getTradePair().getQuote()));
+				this.tradeService.placeMarketOrder(order);
 				inval = val.getTradePair().getQuote();
 			} 
-			System.out.print("\n");
+			log.debug("\n");
 			double tmp = 0;
 			int i = 0;
 			while(tmp <= 0.0) {
@@ -89,7 +106,7 @@ public class OrderExecutor {
 				try {
 					Thread.sleep(80);
 				} catch (InterruptedException e) {
-					System.out.println(e.getMessage());;
+					log.warn(e.getMessage());;
 				}
 				if (i >= 5) {
 					break;

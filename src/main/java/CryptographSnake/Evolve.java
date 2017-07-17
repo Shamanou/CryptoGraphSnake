@@ -4,11 +4,13 @@ import static org.jenetics.engine.EvolutionResult.toBestPhenotype;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.math.BigDecimal;
 
 import org.apache.commons.math3.fraction.BigFraction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bson.conversions.Bson;
 import org.jenetics.AnyChromosome;
 import org.jenetics.AnyGene;
@@ -22,6 +24,7 @@ import org.jenetics.engine.Engine;
 import org.jenetics.engine.EvolutionResult;
 import org.jenetics.engine.EvolutionStatistics;
 import org.jenetics.engine.limit;
+import org.knowm.xchange.currency.Currency;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -33,10 +36,12 @@ public class Evolve {
 	private static int n;
 	private static MongoCollection<Ticker> table;
 	private static BigFraction startVolumeConv;
+	private final static Logger log = LogManager.getLogger(Evolve.class);
+
 	
 	public Evolve(HashMap<String,Object> start, MongoCollection<Ticker> table) {
-		Evolve.startCurrency = (String)start.get("currency");
-		Evolve.startVolume =  (BigFraction)start.get("volume");
+		Evolve.startCurrency = ((Currency)start.get("currency")).getCurrencyCode();
+		Evolve.startVolume =  new BigFraction(((BigDecimal)start.get("value")).doubleValue());
 		Evolve.table = table;
 		Evolve.n = 0;
 		
@@ -47,10 +52,10 @@ public class Evolve {
     	String start = Evolve.startCurrency; 
 		Reference r = new Reference(Evolve.table);
         BigFraction fit = startVolume;
-        BigFraction prevConv = startVolumeConv; 
-        List<AnyGene<Ticker>> list = chrom.getChromosome().toSeq().asList();
-        for (int z = 0; z < list.size(); z++) {
-        		Ticker ticker = list.get(z).getAllele();
+        BigFraction prevConv = startVolumeConv;
+        
+        for (int z = 0; z < chrom.length(); z++) {
+        		Ticker ticker = chrom.get(0, z).getAllele();        		
         		if ( ticker.getTradePair().getBase().equals(start) || ticker.getTradePair().getQuote().equals(start) ){
         			
         			if (ticker.getTradePair().getBase().equals(start)){
@@ -62,14 +67,14 @@ public class Evolve {
 //        			System.out.println(fit.doubleValue());
 //        			System.out.println(ticker.getTradePair().getBase()+ticker.getTradePair().getQuote());
 //        			
-        			r.setReference("XXBT");
+        			r.setReference("BTC");
         			r.setReferenceOf(start);
         			r.setVolume(fit);
         			
         			fitConv = r.getConvertedValue();
-        			fitConv = new BigFraction(fitConv.doubleValue() - (fitConv.doubleValue() * ticker.getFeesRaw().get(0).get(0)));
+        			fitConv = new BigFraction(fitConv.doubleValue() - (fitConv.doubleValue() * 0.0026));
         			
-        			r.setReference("XXBT");
+        			r.setReference("BTC");
         			r.setReferenceOf(startCurrency);
         			r.setVolume(startVolume);
         			
@@ -133,7 +138,7 @@ public class Evolve {
 		
 		final Engine<AnyGene<Ticker>, Double> engine = Engine
                 .builder(Evolve::eval, chrom)
-                .populationSize(5000)
+                .populationSize(100)
                 .optimize(Optimize.MAXIMUM)
                 .survivorsSelector(new TournamentSelector<>(10))
                 .offspringSelector(new RouletteWheelSelector<>())
@@ -146,7 +151,7 @@ public class Evolve {
 	    		.limit(100)
 	            .peek(statistics)
 	            .collect(toBestPhenotype());
-	    System.out.println(statistics);
+	    log.debug(statistics);
 		return result;
 	}
 }
