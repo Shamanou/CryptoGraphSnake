@@ -81,7 +81,12 @@
     <artifactId>xchange-kraken</artifactId>
     <version>4.2.0</version>
 </dependency>
-
+<!-- https://mvnrepository.com/artifact/org.knowm.xchange/xchange-kraken -->
+<dependency>
+    <groupId>org.knowm.xchange</groupId>
+    <artifactId>xchange-poloniex</artifactId>
+    <version>4.2.0</version>
+</dependency>
 
 </dependencies>  
   <repositories>

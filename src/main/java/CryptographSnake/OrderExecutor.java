@@ -23,8 +23,8 @@ import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order.OrderType;
 import org.knowm.xchange.dto.trade.MarketOrder;
 import org.knowm.xchange.kraken.KrakenExchange;
+import org.knowm.xchange.poloniex.PoloniexExchange;
 import org.knowm.xchange.service.account.AccountService;
-import org.knowm.xchange.service.marketdata.MarketDataService;
 import org.knowm.xchange.service.trade.TradeService;
 
 import com.mongodb.client.MongoCollection;
@@ -39,7 +39,6 @@ public class OrderExecutor {
 	private KrakenApi api = new KrakenApi();
 	private final Logger log = LogManager.getLogger(OrderExecutor.class);
 	private  Exchange kraken = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
-	private  MarketDataService marketDataService;
 	private TradeService tradeService;
 	private  AccountService accountService;
 
@@ -60,12 +59,11 @@ public class OrderExecutor {
 		String[] key = stringBuffer.toString().split("\n");
 			
 	
-		ExchangeSpecification exchangeSpecification = new ExchangeSpecification(KrakenExchange.class.getName());
+		ExchangeSpecification exchangeSpecification = new ExchangeSpecification(PoloniexExchange.class.getName());
 		exchangeSpecification.setApiKey(key[0]);
 		exchangeSpecification.setSecretKey(key[1]);
 		kraken.applySpecification(exchangeSpecification);
 		tradeService = kraken.getTradeService();
-		marketDataService = kraken.getMarketDataService();
 		accountService = kraken.getAccountService();		
 	}
 

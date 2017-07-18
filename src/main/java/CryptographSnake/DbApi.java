@@ -27,7 +27,7 @@ import org.knowm.xchange.dto.account.Balance;
 import org.knowm.xchange.exceptions.ExchangeException;
 import org.knowm.xchange.exceptions.NotAvailableFromExchangeException;
 import org.knowm.xchange.exceptions.NotYetImplementedForExchangeException;
-import org.knowm.xchange.kraken.KrakenExchange;
+import org.knowm.xchange.poloniex.PoloniexExchange;
 import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.marketdata.MarketDataService;
 
@@ -44,7 +44,7 @@ public class DbApi<CodecRegistry> {
 	private org.bson.codecs.configuration.CodecRegistry pojoCodecRegistry;
 	private File apikey;
 	private  final Logger log = LogManager.getLogger(DbApi.class);
-	private  Exchange kraken = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
+	private  Exchange exchange = ExchangeFactory.INSTANCE.createExchange(PoloniexExchange.class.getName());
 	private  MarketDataService marketDataService;
 	private  List<CurrencyPair> symbols;
 	private  AccountService accountService;
@@ -75,13 +75,13 @@ public class DbApi<CodecRegistry> {
 		fileReader.close();
 		String[] key = stringBuffer.toString().split("\n");	
 		
-		ExchangeSpecification exchangeSpecification = new ExchangeSpecification(KrakenExchange.class.getName());
+		ExchangeSpecification exchangeSpecification = new ExchangeSpecification(PoloniexExchange.class.getName());
 		exchangeSpecification.setApiKey(key[0]);
 		exchangeSpecification.setSecretKey(key[1]);
-		kraken.applySpecification(exchangeSpecification);
-		marketDataService = kraken.getMarketDataService();
-		symbols = kraken.getExchangeSymbols();
-		accountService = kraken.getAccountService();
+		exchange.applySpecification(exchangeSpecification);
+		marketDataService = exchange.getMarketDataService();
+		symbols = exchange.getExchangeSymbols();
+		accountService = exchange.getAccountService();
 	}
 	
 	public MongoCollection<Ticker> getTable() {
@@ -97,11 +97,13 @@ public class DbApi<CodecRegistry> {
 		while(keyIt.hasNext()) {
 			Currency key = (Currency ) keyIt.next();
 		
-			if (wallet.get(key).getTotal().doubleValue() > 0.0) {
+			if (wallet.get(key).getAvailable().doubleValue() > 0.0) {
 				HashMap<String,Object> map = new HashMap<String, Object>();
-				map.put("currency", key);
-				map.put("value", wallet.get(key).getTotal() );
-				wv.add(map);
+				if (!key.getCurrencyCode().equals("INDEX")) {
+					map.put("currency", key);
+					map.put("value", wallet.get(key).getAvailable() );
+					wv.add(map);
+				}
 			}
 		}
 		
@@ -121,12 +123,14 @@ public class DbApi<CodecRegistry> {
 		for (CurrencyPair symbol: symbols) {			
 			Ticker ticker = new Ticker();
 			try {
-				org.knowm.xchange.dto.marketdata.Ticker tk = marketDataService.getTicker(symbol);
+				if (!symbol.base.equals("INDEX") && !symbol.counter.equals("INDEX")) {
+					org.knowm.xchange.dto.marketdata.Ticker tk = marketDataService.getTicker(symbol);
 //				ticker.setFeesRaw(assetPairs.getJSONObject(pairs.get(i)).getJSONArray("fees")  );
-				ticker.setTickerAsk( tk.getAsk().doubleValue() );
-				ticker.setTickerBid( tk.getBid().doubleValue() );
-				ticker.setTradePair(new TradePair( symbol.base.getCurrencyCode(), symbol.counter.getCurrencyCode() ));
-				table.insertOne(ticker);
+					ticker.setTickerAsk( tk.getAsk().doubleValue() );
+					ticker.setTickerBid( tk.getBid().doubleValue() );
+					ticker.setTradePair(new TradePair( symbol.base.getCurrencyCode(), symbol.counter.getCurrencyCode() ));
+					table.insertOne(ticker);
+				}
 			}catch (Exception ex) {
 				log.warn(ex.getMessage());
 			}
