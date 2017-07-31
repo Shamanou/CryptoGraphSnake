@@ -27,6 +27,7 @@ import org.knowm.xchange.dto.account.Balance;
 import org.knowm.xchange.exceptions.ExchangeException;
 import org.knowm.xchange.exceptions.NotAvailableFromExchangeException;
 import org.knowm.xchange.exceptions.NotYetImplementedForExchangeException;
+import org.knowm.xchange.kraken.KrakenExchange;
 import org.knowm.xchange.poloniex.PoloniexExchange;
 import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.marketdata.MarketDataService;
@@ -44,7 +45,7 @@ public class DbApi<CodecRegistry> {
 	private org.bson.codecs.configuration.CodecRegistry pojoCodecRegistry;
 	private File apikey;
 	private  final Logger log = LogManager.getLogger(DbApi.class);
-	private  Exchange exchange = ExchangeFactory.INSTANCE.createExchange(PoloniexExchange.class.getName());
+	private  Exchange exchange = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
 	private  MarketDataService marketDataService;
 	private  List<CurrencyPair> symbols;
 	private  AccountService accountService;
