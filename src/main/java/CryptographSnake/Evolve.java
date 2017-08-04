@@ -3,6 +3,7 @@ package CryptographSnake;
 import static org.jenetics.engine.EvolutionResult.toBestPhenotype;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.function.Consumer;
@@ -47,75 +48,80 @@ public class Evolve {
 		
 	}
 	
-    private static Double eval(Genotype<AnyGene<Ticker>> chrom) {
+    private static Double eval(Genotype<AnyGene<Ticker>> g) {
     	BigFraction fitConv = new BigFraction(0.0);
-    	String start = Evolve.startCurrency; 
-		Reference r = new Reference(Evolve.table);
         BigFraction fit = startVolume;
         BigFraction prevConv = startVolumeConv;
+        BigFraction volume;
         
-        for (int z = 0; z < chrom.length(); z++) {
-        		Ticker ticker = chrom.get(0, z).getAllele();        		
+        
+        if (!"BTC".equals(startVolume)) {
+        	Reference r2 = new Reference(Evolve.table);
+        	r2.setReferenceOf(startCurrency);
+        	r2.setVolume(startVolume);
+        	r2.setReference("BTC");
+        	volume = r2.getConvertedValue();
+        }else {
+        	volume = startVolume;
+        }
+		ArrayList<Double> fitnesses = new ArrayList<Double>();
+		
+        for (int z = 0; z < g.length(); z++) {
+        	String start = Evolve.startCurrency; 
+        	for (int i = 0; i < g.getChromosome(z).length(); i++) {
+        		Ticker ticker = g.getChromosome(z).getGene(i).getAllele();
+        		        		
         		if ( ticker.getTradePair().getBase().equals(start) || ticker.getTradePair().getQuote().equals(start) ){
         			
-        			if (ticker.getTradePair().getBase().equals(start)){
-        				fit = fit.divide(new BigFraction(ticker.getTickerAsk()));
-        			} else if (ticker.getTradePair().getQuote().equals(start)){
-        				fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
-        			}
+        			fit = fit.multiply(new BigFraction(1).divide(new BigFraction(ticker.getTickerAsk())));
+        			fit = fit.subtract(fit.multiply(new BigFraction(0.0026)));        		
         			
-//        			System.out.println(fit.doubleValue());
-//        			System.out.println(ticker.getTradePair().getBase()+ticker.getTradePair().getQuote());
-//        			
-        			r.setReference("BTC");
-        			r.setReferenceOf(start);
-        			r.setVolume(fit);
-        			
-        			fitConv = r.getConvertedValue();
-        			fitConv = new BigFraction(fitConv.doubleValue() - (fitConv.doubleValue() * 0.0026));
-        			
-        			r.setReference("BTC");
-        			r.setReferenceOf(startCurrency);
-        			r.setVolume(startVolume);
-        			
-        			
-        			prevConv = new BigFraction(fitConv.doubleValue() - r.getConvertedValue().doubleValue());
-
-//        			System.out.print(fitConv.doubleValue());
-//        			System.out.print(" - ");
-//        			System.out.print(r.getConvertedValue().doubleValue());
-//        			System.out.print(" = ");
-//        			System.out.print(prevConv.doubleValue());
-//        			System.out.print("\n");
-//        			prevConv = r.getConvertedValue();
-//            		System.out.println(prevConv.doubleValue());
+        			Reference r = new Reference(Evolve.table);
+        			if (!start.equals("BTC")) {
+        				r.setReference("BTC");
+        				r.setReferenceOf(start);
+        				r.setVolume(fit);
+        				fitConv = r.getConvertedValue();
+        			} else {
+        				fitConv = fit;
+        			}	
         			
         			if (ticker.getTradePair().getBase().equals(start)){
         				start = ticker.getTradePair().getQuote();
-        			}else if  (ticker.getTradePair().getQuote().equals(start)){
+        			} else if (ticker.getTradePair().getQuote().equals(start)){
         				start = ticker.getTradePair().getBase();        				
+        			}else {
+        				fitnesses.add(0.0);
+        				break;
         			}
+        			        			        			
+        			if  (fitConv.doubleValue() > 0.0) { 
+        				prevConv = fitConv.subtract(volume);
+        			}else {
+        				fitnesses.add(fitConv.doubleValue());
+        				break;
+        			}
+        			
+        		} else {
+        			fitnesses.add(0.0);
+        			break;
         		}
         	}
-//        	System.out.println("\n");
-//		System.out.print(fitConv.doubleValue());
-//		System.out.print(" - ");
-//		System.out.print(r.getConvertedValue().doubleValue());
-//		System.out.print(" = ");
-//		System.out.print(prevConv.doubleValue());
-//		System.out.print("\n");
-	    	return prevConv.doubleValue();
-    }
-	
+    	    fitnesses.add(prevConv.doubleValue());
+        }
+        return Collections.max(fitnesses);
+        
+    }	
 	private static Ticker getRandomTicker() {
 		Random randomGenerator = new Random();
+
 		if (n == 0) {
 			Bson filter = Filters.or(
-						Filters.eq("pair.base", Evolve.startCurrency),
-						Filters.eq("pair.quote", Evolve.startCurrency)
+					Filters.eq("pair.base", Evolve.startCurrency),
+					Filters.eq("pair.quote", Evolve.startCurrency)
 			);
 			Bson sort = Sorts.descending("ask");
-			ArrayList<Ticker> result = table.find(Ticker.class).filter(filter).sort(sort).into(new ArrayList<Ticker>());
+			ArrayList<Ticker> result = table.find(Ticker.class).filter(filter).sort(sort).into(new ArrayList<Ticker>());	
 			Ticker t = result.get(randomGenerator.nextInt(result.size()));
 			n++;
 			return t;

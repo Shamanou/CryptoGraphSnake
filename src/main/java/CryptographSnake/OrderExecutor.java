@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,29 +16,25 @@ import org.jenetics.AnyGene;
 import org.jenetics.Chromosome;
 import org.jenetics.Genotype;
 import org.jenetics.Phenotype;
-import org.json.JSONObject;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeFactory;
 import org.knowm.xchange.ExchangeSpecification;
 import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
+import org.knowm.xchange.dto.Order.IOrderFlags;
 import org.knowm.xchange.dto.Order.OrderType;
 import org.knowm.xchange.dto.trade.MarketOrder;
 import org.knowm.xchange.kraken.KrakenExchange;
-import org.knowm.xchange.poloniex.PoloniexExchange;
+import org.knowm.xchange.kraken.dto.trade.KrakenOrderFlags;
 import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.trade.TradeService;
 
 import com.mongodb.client.MongoCollection;
 
-import edu.self.kraken.api.KrakenApi;
-import edu.self.kraken.api.KrakenApi.Method;
-
 public class OrderExecutor {
 	private MongoCollection<Ticker> table;
 	private HashMap<String,Object> start;
 	private Phenotype<AnyGene<Ticker>, Double> order;
-	private KrakenApi api = new KrakenApi();
 	private final Logger log = LogManager.getLogger(OrderExecutor.class);
 	private  Exchange kraken = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
 	private TradeService tradeService;
@@ -59,7 +57,7 @@ public class OrderExecutor {
 		String[] key = stringBuffer.toString().split("\n");
 			
 	
-		ExchangeSpecification exchangeSpecification = new ExchangeSpecification(PoloniexExchange.class.getName());
+		ExchangeSpecification exchangeSpecification = new ExchangeSpecification(KrakenExchange.class.getName());
 		exchangeSpecification.setApiKey(key[0]);
 		exchangeSpecification.setSecretKey(key[1]);
 		kraken.applySpecification(exchangeSpecification);
@@ -79,14 +77,17 @@ public class OrderExecutor {
 		while(it.hasNext()) {
 			Ticker val = it.next().getAllele();
 			MarketOrder order = null;
-			if (inval.equals(val.getTradePair().getQuote())) {
-				
-				log.debug(accountService.getAccountInfo().getWallet().getBalance(
-						new Currency(inval)).getTotal());
-				
+			Set<IOrderFlags> flags =  new HashSet<IOrderFlags>();
+			flags.add(KrakenOrderFlags.VIQC);
+			
+			log.debug(accountService.getAccountInfo().getWallet().getBalance(
+					new Currency(inval)).getTotal());
+			
+			if (inval.equals(val.getTradePair().getQuote())) {					
 				order = new MarketOrder(OrderType.BID,accountService.getAccountInfo().getWallet().getBalance(
 						new Currency(inval)).getTotal(), 
 						new CurrencyPair( val.getTradePair().getBase(), val.getTradePair().getQuote()));
+				order.setOrderFlags(flags);
 				inval = val.getTradePair().getBase();
 			} else if (inval.equals(val.getTradePair().getBase())) {
 				order = new MarketOrder(OrderType.ASK,accountService.getAccountInfo().getWallet().getBalance(
@@ -97,7 +98,7 @@ public class OrderExecutor {
 			try {
 				this.tradeService.placeMarketOrder(order);
 			} catch(Exception ex) {
-				log.warn(ex.getMessage());
+				log.warn("Could not execute order ("+ val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() +"): "+ ex.getMessage());
 				break;
 			}
 			
@@ -107,9 +108,9 @@ public class OrderExecutor {
 			while(tmp <= 0.0) {
 				i++;
 				if (inval.equals(val.getTradePair().getBase())) {
-					tmp =(new JSONObject(this.api.queryPrivate(Method.BALANCE)).getJSONObject("result").getDouble(val.getTradePair().getBase()));
+					tmp = accountService.getAccountInfo().getWallet().getBalances().get(val.getTradePair().getBase()).getAvailable().doubleValue();
 				}else {
-					tmp =(new JSONObject(this.api.queryPrivate(Method.BALANCE)).getJSONObject("result").getDouble(val.getTradePair().getQuote()));
+					tmp = accountService.getAccountInfo().getWallet().getBalances().get(val.getTradePair().getQuote()).getAvailable().doubleValue();
 				}
 				try {
 					Thread.sleep(80);

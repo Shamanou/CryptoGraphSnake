@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.math3.fraction.BigFraction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -28,7 +29,6 @@ import org.knowm.xchange.exceptions.ExchangeException;
 import org.knowm.xchange.exceptions.NotAvailableFromExchangeException;
 import org.knowm.xchange.exceptions.NotYetImplementedForExchangeException;
 import org.knowm.xchange.kraken.KrakenExchange;
-import org.knowm.xchange.poloniex.PoloniexExchange;
 import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.marketdata.MarketDataService;
 
@@ -36,7 +36,6 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-
 
 public class DbApi<CodecRegistry> {
 	private MongoClient mongo;
@@ -50,7 +49,6 @@ public class DbApi<CodecRegistry> {
 	private  List<CurrencyPair> symbols;
 	private  AccountService accountService;
 
-	
 	public DbApi(File apikey) throws IOException {
 		this.apikey = apikey;
 
@@ -76,7 +74,7 @@ public class DbApi<CodecRegistry> {
 		fileReader.close();
 		String[] key = stringBuffer.toString().split("\n");	
 		
-		ExchangeSpecification exchangeSpecification = new ExchangeSpecification(PoloniexExchange.class.getName());
+		ExchangeSpecification exchangeSpecification = new ExchangeSpecification(KrakenExchange.class.getName());
 		exchangeSpecification.setApiKey(key[0]);
 		exchangeSpecification.setSecretKey(key[1]);
 		exchange.applySpecification(exchangeSpecification);
@@ -92,7 +90,7 @@ public class DbApi<CodecRegistry> {
 	public ArrayList<HashMap<String, Object>> getStart() throws NotAvailableFromExchangeException, NotYetImplementedForExchangeException, ExchangeException, IOException {		
 		Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallet().getBalances();
 				
-		Iterator keyIt = wallet.keySet().iterator();
+		Iterator<Currency> keyIt = wallet.keySet().iterator();
 		ArrayList<HashMap<String,Object>> wv = new ArrayList<HashMap<String,Object>>();
 		
 		while(keyIt.hasNext()) {
@@ -100,18 +98,23 @@ public class DbApi<CodecRegistry> {
 		
 			if (wallet.get(key).getAvailable().doubleValue() > 0.0) {
 				HashMap<String,Object> map = new HashMap<String, Object>();
-				if (!key.getCurrencyCode().equals("INDEX")) {
-					map.put("currency", key);
-					map.put("value", wallet.get(key).getAvailable() );
-					wv.add(map);
-				}
+				map.put("currency", key);
+				map.put("value", wallet.get(key).getAvailable() );
+				
+				Reference r = new Reference(this.table);
+    			r.setReference("BTC");
+    			r.setReferenceOf(((Currency)map.get("currency")).getCurrencyCode());
+    			r.setVolume(new BigFraction(((BigDecimal)map.get("value")).doubleValue()));				
+				
+				map.put("value_conv", r.getConvertedValue() );
+				wv.add(map);
 			}
 		}
 		
 		wv.sort((HashMap<String,Object> z1, HashMap<String,Object> z2) -> {
-			if (((BigDecimal)z1.get("value")).doubleValue() > ((BigDecimal)z2.get("value")).doubleValue()) {
+			if (((BigFraction)z1.get("value_conv")).doubleValue()  > ((BigFraction)z2.get("value_conv")).doubleValue()) {
 				return 1;
-			}if (((BigDecimal)z1.get("value")).doubleValue() < ((BigDecimal)z2.get("value")).doubleValue()) {
+			}if (((BigFraction)z1.get("value_conv")).doubleValue() < ((BigFraction)z2.get("value_conv")).doubleValue()) {
 				return -1;
 			}
 			return 0;
@@ -124,14 +127,12 @@ public class DbApi<CodecRegistry> {
 		for (CurrencyPair symbol: symbols) {			
 			Ticker ticker = new Ticker();
 			try {
-				if (!symbol.base.equals("INDEX") && !symbol.counter.equals("INDEX")) {
-					org.knowm.xchange.dto.marketdata.Ticker tk = marketDataService.getTicker(symbol);
+				org.knowm.xchange.dto.marketdata.Ticker tk = marketDataService.getTicker(symbol);
 //				ticker.setFeesRaw(assetPairs.getJSONObject(pairs.get(i)).getJSONArray("fees")  );
-					ticker.setTickerAsk( tk.getAsk().doubleValue() );
-					ticker.setTickerBid( tk.getBid().doubleValue() );
-					ticker.setTradePair(new TradePair( symbol.base.getCurrencyCode(), symbol.counter.getCurrencyCode() ));
-					table.insertOne(ticker);
-				}
+				ticker.setTickerAsk( tk.getAsk().doubleValue() );
+				ticker.setTickerBid( tk.getBid().doubleValue() );
+				ticker.setTradePair(new TradePair( symbol.base.getCurrencyCode(), symbol.counter.getCurrencyCode().split("\\.")[0] ));
+				table.insertOne(ticker);
 			}catch (Exception ex) {
 				log.warn(ex.getMessage());
 			}
