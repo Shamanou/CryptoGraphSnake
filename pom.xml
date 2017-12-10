@@ -57,6 +57,7 @@
     <artifactId>log4j-api</artifactId>
     <version>2.8.2</version>
   </dependency>
+<<<<<<< HEAD
   <!-- https://mvnrepository.com/artifact/org.knowm.xchange/xchange-hitbtc -->
 <dependency>
     <groupId>org.knowm.xchange</groupId>
@@ -69,6 +70,25 @@
     <artifactId>log4j-core</artifactId>
     <version>2.8.2</version>
   </dependency>
+=======
+  <dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-core</artifactId>
+    <version>2.8.2</version>
+  </dependency>
+<!-- https://mvnrepository.com/artifact/org.knowm.xchange/xchange-core -->
+<dependency>
+    <groupId>org.knowm.xchange</groupId>
+    <artifactId>xchange-core</artifactId>
+    <version>4.2.1</version>
+</dependency>
+<!-- https://mvnrepository.com/artifact/org.knowm.xchange/xchange-kraken -->
+<dependency>
+    <groupId>org.knowm.xchange</groupId>
+    <artifactId>xchange-kraken</artifactId>
+    <version>4.2.1</version>
+</dependency>
+>>>>>>> branch 'master' of https://github.com/Shamanou/CryptoGraphSnake.git
 
 </dependencies>  
   <repositories>

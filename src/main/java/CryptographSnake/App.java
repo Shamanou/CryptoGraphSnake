@@ -1,5 +1,6 @@
 package CryptographSnake;
 
+<<<<<<< HEAD
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -59,7 +60,6 @@ public class App {
 					Evolve e = new Evolve(start, api.getTable());
 					Phenotype<AnyGene<Ticker>, Double>  result = e.run();
 					log.debug("Results:\n"+ result + "\n");
-					OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start,key, secret);
 					if (result.getFitness() > 0.0) {
 						orderExecutor.setOrder(result);
 						orderExecutor.ExecuteOrder();

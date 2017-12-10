@@ -26,6 +26,7 @@ import org.jenetics.engine.EvolutionResult;
 import org.jenetics.engine.EvolutionStatistics;
 import org.jenetics.engine.limit;
 import org.knowm.xchange.currency.Currency;
+<<<<<<< HEAD
 import org.knowm.xchange.dto.marketdata.Ticker;
 
 import com.mongodb.client.MongoCollection;
@@ -107,6 +108,92 @@ public class Evolve {
     	    fitnesses.add(fitConv.subtract(volume).doubleValue());
         }
         return Collections.max(fitnesses);    
+=======
+
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
+
+public class Evolve {
+	private static BigFraction startVolume;
+	private static String startCurrency;
+	private static int n;
+	private static MongoCollection<Ticker> table;
+	private static BigFraction startVolumeConv;
+	private final static Logger log = LogManager.getLogger(Evolve.class);
+
+	
+	public Evolve(HashMap<String,Object> start, MongoCollection<Ticker> table) {
+		Evolve.startCurrency = ((Currency)start.get("currency")).getCurrencyCode();
+		Evolve.startVolume =  new BigFraction(((BigDecimal)start.get("value")).doubleValue());
+		Evolve.table = table;
+		Evolve.n = 0;
+		
+	}
+	
+    private static Double eval(Genotype<AnyGene<Ticker>> g) {
+    	BigFraction fitConv = new BigFraction(0.0);
+        BigFraction fit = startVolume;
+        BigFraction prevConv = startVolumeConv;
+        BigFraction volume;
+        
+        
+        if (!"BTC".equals(startVolume)) {
+        	Reference r2 = new Reference(Evolve.table);
+        	r2.setReferenceOf(startCurrency);
+        	r2.setVolume(startVolume);
+        	r2.setReference("BTC");
+        	volume = r2.getConvertedValue();
+        }else {
+        	volume = startVolume;
+        }
+		ArrayList<Double> fitnesses = new ArrayList<Double>();
+		
+        for (int z = 0; z < g.length(); z++) {
+        	String start = Evolve.startCurrency; 
+        	for (int i = 0; i < g.getChromosome(z).length(); i++) {
+        		Ticker ticker = g.getChromosome(z).getGene(i).getAllele();
+        		        		
+        		if ( ticker.getTradePair().getBase().equals(start) || ticker.getTradePair().getQuote().equals(start) ){
+        			
+        			fit = fit.multiply(new BigFraction(1).divide(new BigFraction(ticker.getTickerAsk())));
+        			fit = fit.subtract(fit.multiply(new BigFraction(0.0026)));        		
+        			
+        			Reference r = new Reference(Evolve.table);
+        			if (!start.equals("BTC")) {
+        				r.setReference("BTC");
+        				r.setReferenceOf(start);
+        				r.setVolume(fit);
+        				fitConv = r.getConvertedValue();
+        			} else {
+        				fitConv = fit;
+        			}	
+        			
+        			if (ticker.getTradePair().getBase().equals(start)){
+        				start = ticker.getTradePair().getQuote();
+        			} else if (ticker.getTradePair().getQuote().equals(start)){
+        				start = ticker.getTradePair().getBase();        				
+        			}else {
+        				fitnesses.add(0.0);
+        				break;
+        			}
+        			        			        			
+        			if  (fitConv.doubleValue() > 0.0) { 
+        				prevConv = fitConv.subtract(volume);
+        			}else {
+        				fitnesses.add(fitConv.doubleValue());
+        				break;
+        			}
+        			
+        		} else {
+        			fitnesses.add(0.0);
+        			break;
+        		}
+        	}
+    	    fitnesses.add(prevConv.doubleValue());
+        }
+        return Collections.max(fitnesses);
+        
     }	
 	private static Ticker getRandomTicker() {
 		Random randomGenerator = new Random();
