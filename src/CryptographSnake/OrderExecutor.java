@@ -74,32 +74,18 @@ public class OrderExecutor {
             }
             try {
                 this.tradeService.placeMarketOrder(order);
+                log.info(val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() + " trade executed");
             } catch (Exception ex) {
                 log.warn("Could not execute order (" + val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() + "): " + ex.getMessage());
-                break;
             }
 
             log.debug("\n");
-            double tmp = 0;
-            int i = 0;
-            while (tmp <= 0.0) {
-                i++;
-                if (inval.equals(val.getTradePair().getBase())) {
-                    tmp = accountService.getAccountInfo().getWallet().getBalances().get(val.getTradePair().getBase()).getAvailable().doubleValue();
-                } else {
-                    tmp = accountService.getAccountInfo().getWallet().getBalances().get(val.getTradePair().getQuote()).getAvailable().doubleValue();
-                }
-                try {
-                    Thread.sleep(80);
-                } catch (InterruptedException e) {
-                    log.warn(e.getMessage());;
-                }
-                if (i >= 5) {
-                    break;
-                }
+            try {
+                Thread.sleep(150);
+            } catch (InterruptedException e) {
+                log.warn(e.getMessage());
             }
         }
-
     }
 
     public MongoCollection<Ticker> getTable() {
