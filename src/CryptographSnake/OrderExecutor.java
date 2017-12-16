@@ -58,16 +58,16 @@ public class OrderExecutor {
             Ticker val = it.next().getAllele();
             MarketOrder order = null;
 
-            log.debug(accountService.getAccountInfo().getWallet().getBalance(
+            log.debug(accountService.getAccountInfo().getWallet("Trading").getBalance(
                     new Currency(inval)).getTotal().toPlainString());
 
             if (inval.equals(val.getTradePair().getQuote())) {
-                order = new MarketOrder(OrderType.BID, accountService.getAccountInfo().getWallet().getBalance(
+                order = new MarketOrder(OrderType.BID, accountService.getAccountInfo().getWallet("Trading").getBalance(
                         new Currency(inval)).getTotal(),
                         new CurrencyPair(val.getTradePair().getBase(), val.getTradePair().getQuote()));
                 inval = val.getTradePair().getBase();
             } else if (inval.equals(val.getTradePair().getBase())) {
-                order = new MarketOrder(OrderType.ASK, accountService.getAccountInfo().getWallet().getBalance(
+                order = new MarketOrder(OrderType.ASK, accountService.getAccountInfo().getWallet("Trading").getBalance(
                         new Currency(inval)).getTotal(),
                         new CurrencyPair(val.getTradePair().getBase(), val.getTradePair().getQuote()));
                 inval = val.getTradePair().getQuote();
