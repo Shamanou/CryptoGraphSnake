@@ -58,20 +58,21 @@ public class Evolve {
         } else {
             volume = startVolume;
         }
+
         ArrayList<Double> fitnesses = new ArrayList<Double>();
 
         for (int z = 0; z < g.length(); z++) {
             String start = Evolve.startCurrency;
-            String end = null;
+            String end = Evolve.startCurrency;
             for (int i = 0; i < g.getChromosome(z).length(); i++) {
                 Ticker ticker = g.getChromosome(z).getGene(i).getAllele();
 
                 if (ticker.getTradePair().getBase().equals(start) || ticker.getTradePair().getQuote().equals(start)) {
 
-                    if (ticker.getTradePair().getBase().equals(start)) {
-                        fit = fit.divide(new BigFraction(ticker.getTickerAsk()));
-                    } else if (ticker.getTradePair().getQuote().equals(start)) {
-                        fit = fit.multiply(new BigFraction(ticker.getTickerBid()));
+                    if (ticker.getTradePair().getBase().equals(end)) {
+                        fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
+                    } else if (ticker.getTradePair().getQuote().equals(end)) {
+                        fit = new BigFraction(Math.sqrt(fit.multiply(new BigFraction(ticker.getTickerBid())).doubleValue()));
                     }
                     end = ticker.getTradePair().getQuote();
                     fit = fit.subtract(fit.multiply(new BigFraction(0.01)));
@@ -83,20 +84,14 @@ public class Evolve {
                         r.setVolume(fit);
                         fitConv = r.getConvertedValue();
                     } else {
-                        // if the value could not be converted return 0
-                        fitConv = new BigFraction(0.0);
-                    }
-
-                    if (ticker.getTradePair().getBase().equals(start)) {
-                        start = ticker.getTradePair().getQuote();
-                    } else if (ticker.getTradePair().getQuote().equals(start)) {
-                        start = ticker.getTradePair().getBase();
-                    } else {
-                        break;
+                        fitConv = fit;
                     }
 
                     if (fitConv.doubleValue() > 0.0) {
                         fitConv = fitConv.subtract(volume);
+                    } else {
+                        fitConv = new BigFraction(0.0);
+                        break;
                     }
                 } else {
                     break;
