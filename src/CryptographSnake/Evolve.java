@@ -55,11 +55,11 @@ public class Evolve {
         BigFraction volume;
         
         
-        if (!"BTC".equals(startVolume)) {
+        if (!Currency.BTC.getSymbol().equals(startVolume)) {
         	Reference r2 = new Reference(Evolve.table);
         	r2.setReferenceOf(startCurrency);
         	r2.setVolume(startVolume);
-        	r2.setReference("BTC");
+        	r2.setReference(Currency.BTC.getSymbol());
         	volume = r2.getConvertedValue();
         }else {
         	volume = startVolume;
@@ -74,11 +74,11 @@ public class Evolve {
         		if ( ticker.getTradePair().getBase().equals(start) || ticker.getTradePair().getQuote().equals(start) ){
         			
         			fit = fit.multiply(new BigFraction(1).divide(new BigFraction(ticker.getTickerAsk())));
-        			fit = fit.subtract(fit.multiply(new BigFraction(0.0026)));        		
+        			fit = fit.subtract(fit.multiply(new BigFraction(0.01)));        		
         			
         			Reference r = new Reference(Evolve.table);
-        			if (!start.equals("BTC")) {
-        				r.setReference("BTC");
+        			if (!start.equals(Currency.BTC.getSymbol())) {
+        				r.setReference(Currency.BTC.getSymbol());
         				r.setReferenceOf(start);
         				r.setVolume(fit);
         				fitConv = r.getConvertedValue();
@@ -157,7 +157,7 @@ public class Evolve {
 	    		.limit(100)
 	            .peek(statistics)
 	            .collect(toBestPhenotype());
-	    log.debug(statistics.toString());
+	    log.info(statistics.toString());
 		return result;
 	}
 }

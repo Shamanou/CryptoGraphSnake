@@ -27,7 +27,7 @@ public class App {
 			e.printStackTrace();
 		}
 
-    	log.debug("\n"
+    	log.info("\n"
     			+ "\n"
     			+ "			Welcome to the CryptocurrencyGraphSnake\n"
     			+ "			Developed by Shamanou van Leeuwen\n"
@@ -40,7 +40,7 @@ public class App {
 					e1.printStackTrace();
 				}
     		
-            log.debug("\n			+-----------------------+\n"
+            log.info("\n			+-----------------------+\n"
             		+ "			GRABBING TRADE START VALUE\n"
             		+ "			+-----------------------+\n"
             		+ "\n");
@@ -52,13 +52,13 @@ public class App {
 					HashMap<String, Object> start = wallet.get(i);
 					OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start, key, secret);
 					
-					log.debug("\n			+-----------------------+\n"
+					log.info("\n			+-----------------------+\n"
 							+ "			EVOLVING TRADE TRAJECTORY nr. " + String.valueOf(i) + " - "+ ((Currency)start.get("currency")).getDisplayName() +"\n"
 							+ "			+-----------------------+\n\n");
 					i++;
 					Evolve e = new Evolve(start, api.getTable());
 					Phenotype<AnyGene<Ticker>, Double>  result = e.run();
-					log.debug("Results:\n"+ result + "\n");
+					log.info("Results:\n"+ result + "\n");
 					if (result.getFitness() > 0.0) {
 						orderExecutor.setOrder(result);
 						orderExecutor.ExecuteOrder();
