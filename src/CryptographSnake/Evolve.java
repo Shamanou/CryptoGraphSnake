@@ -63,8 +63,7 @@ public class Evolve {
         	volume = r2.getConvertedValue();
         }else {
         	volume = startVolume;
-        }
-        
+        }        
 		ArrayList<Double> fitnesses = new ArrayList<Double>();
 		
         for (int z = 0; z < g.length(); z++) {
@@ -116,7 +115,7 @@ public class Evolve {
 	private static Ticker getRandomTicker() {
 		Random randomGenerator = new Random();
 
-		if (n == 0) {
+		if ((n == 0) || (n >= 2)) {
 			Bson filter = Filters.or(
 					Filters.eq("pair.base", Evolve.startCurrency),
 					Filters.eq("pair.quote", Evolve.startCurrency)
@@ -125,15 +124,12 @@ public class Evolve {
 			ArrayList<Ticker> result = table.find(Ticker.class).filter(filter).sort(sort).into(new ArrayList<Ticker>());	
 			Ticker t = result.get(randomGenerator.nextInt(result.size()));
 			n++;
-			return t;
+			return t;			
 		} else {
 			Bson sort = Sorts.descending("ask");
 			ArrayList<Ticker> result = table.find(Ticker.class).sort(sort).into(new ArrayList<Ticker>());
 			Ticker t = result.get(randomGenerator.nextInt(result.size()));
 			n++;
-			if (n >= 3) {
-				n = 0;
-			}
 			return t;
 		}
 	}
