@@ -5,6 +5,8 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+
 import org.jenetics.AnyGene;
 import org.jenetics.Phenotype;
 import org.json.JSONException;
@@ -58,7 +60,16 @@ public class App {
 					i++;
 					Evolve e = new Evolve(start, api.getTable());
 					Phenotype<AnyGene<Ticker>, Double>  result = e.run();
-					log.info("Results:\n"+ result + "\n");
+					String resultString = "";
+					Iterator<AnyGene<Ticker>> chromit = result.getGenotype().getChromosome().iterator();
+					
+					while(chromit.hasNext()) {
+						Ticker val = chromit.next().getAllele();
+						resultString += val.getTradePair().getBase()+val.getTradePair().getQuote() + "\n"; 
+					}
+					
+					
+					log.info("Results:\n"+ resultString + "\n");
 					if (result.getFitness() > 0.0) {
 						orderExecutor.setOrder(result);
 						orderExecutor.ExecuteOrder();
