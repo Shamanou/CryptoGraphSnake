@@ -1,35 +1,32 @@
 package CryptographSnake;
 
-<<<<<<< HEAD
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.jenetics.AnyGene;
 import org.jenetics.Phenotype;
 import org.json.JSONException;
-import org.knowm.xchange.dto.marketdata.Ticker;
+import org.knowm.xchange.currency.Currency;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class App {	
 	
     public static void main( String[] args ) throws InvalidKeyException {
-        final Logger log = LogManager.getLogger(App.class);
-    	
-    	DbApi<?> api = null;
+        final Logger log = LoggerFactory.getLogger(App.class);
+    	DbApi api = null;
     	
     	String key = args[0];
-    	String secret = args[1];
-    	
+    	String secret = args[1];    	
 		try {
 			api = new DbApi(key, secret);
-		} catch (JSONException e1) {
-			e1.printStackTrace();
+		} catch (JSONException | IOException e) {
+			e.printStackTrace();
 		}
+
     	log.debug("\n"
     			+ "\n"
     			+ "			Welcome to the CryptocurrencyGraphSnake\n"
@@ -53,8 +50,10 @@ public class App {
             		ArrayList<HashMap<String, Object>> wallet = api.getStart();
             		
 					HashMap<String, Object> start = wallet.get(i);
+					OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start, key, secret);
+					
 					log.debug("\n			+-----------------------+\n"
-							+ "			EVOLVING TRADE TRAJECTORY nr. " + String.valueOf(i) + " - "+ ((String)start.get("currency")) +"\n"
+							+ "			EVOLVING TRADE TRAJECTORY nr. " + String.valueOf(i) + " - "+ ((Currency)start.get("currency")).getDisplayName() +"\n"
 							+ "			+-----------------------+\n\n");
 					i++;
 					Evolve e = new Evolve(start, api.getTable());

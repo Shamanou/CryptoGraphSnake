@@ -10,8 +10,6 @@ import java.util.function.Consumer;
 import java.math.BigDecimal;
 
 import org.apache.commons.math3.fraction.BigFraction;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.bson.conversions.Bson;
 import org.jenetics.AnyChromosome;
 import org.jenetics.AnyGene;
@@ -26,89 +24,8 @@ import org.jenetics.engine.EvolutionResult;
 import org.jenetics.engine.EvolutionStatistics;
 import org.jenetics.engine.limit;
 import org.knowm.xchange.currency.Currency;
-<<<<<<< HEAD
-import org.knowm.xchange.dto.marketdata.Ticker;
-
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Sorts;
-
-public class Evolve {
-	private static BigFraction startVolume;
-	private static Currency startCurrency;
-	private static int n;
-	private static MongoCollection<Ticker> table;
-	private final static Logger log = LogManager.getLogger(Evolve.class);
-
-	
-	public Evolve(HashMap<String,Object> start, MongoCollection<Ticker> table) {
-		Evolve.startCurrency = new Currency( ((String)start.get("currency")));
-		Evolve.startVolume =  new BigFraction(((BigDecimal)start.get("value")).doubleValue());
-		Evolve.table = table;
-		Evolve.n = 0;
-		
-	}
-	
-	private static Double eval(Genotype<AnyGene<Ticker>> g) {
-    	BigFraction fitConv = new BigFraction(0.0);
-        BigFraction fit = startVolume;
-        BigFraction volume = null;
-        
-        
-        if (! Currency.BTC.equals(startCurrency)) {
-        	Reference r2 = new Reference(Evolve.table);
-        	r2.setReferenceOf(startCurrency);
-        	r2.setVolume(startVolume);
-        	r2.setReference(Currency.BTC);
-        	try {
-				volume = r2.getConvertedValue();
-			} catch (Exception e) {	
-				log.warn(e.getMessage());
-			}
-        }else {
-        	volume = startVolume;
-        }
-		ArrayList<Double> fitnesses = new ArrayList<Double>();
-		
-        for (int z = 0; z < g.length(); z++) {
-        	Currency start = Evolve.startCurrency; 
-        	for (int i = 0; i < g.getChromosome(z).length(); i++) {
-        		Ticker ticker = g.getChromosome(z).getGene(i).getAllele();
-        		        		
-        		if ( ticker.getCurrencyPair().base.toString().equals(start) || ticker.getCurrencyPair().counter.toString().equals(start) ){
-        			
-        			fit = fit.multiply(new BigFraction(1).divide(new BigFraction(ticker.getAsk().doubleValue())));
-        			fit = fit.subtract(fit.multiply(new BigFraction(0.0026)));        		
-        		        			
-        			if (ticker.getCurrencyPair().base.equals(start)){
-        				start = ticker.getCurrencyPair().counter;
-        			} else if (ticker.getCurrencyPair().counter.toString().equals(start)){
-        				start = ticker.getCurrencyPair().base;        				
-        			}else {
-        				fitnesses.add(0.0);
-        				break;
-        			}
-        			        			        			
-        		}
-        	}
-			Reference r = new Reference(Evolve.table);
-			if (!start.equals(Currency.BTC)) {
-				r.setReference(Currency.BTC);
-				r.setReferenceOf(start);
-				r.setVolume(fit);
-				try {
-					fitConv = r.getConvertedValue();
-				} catch (Exception e) {
-					log.warn(e.getMessage());
-				}
-			} else {
-				fitConv = fit;
-			}	
-
-    	    fitnesses.add(fitConv.subtract(volume).doubleValue());
-        }
-        return Collections.max(fitnesses);    
-=======
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
@@ -120,7 +37,7 @@ public class Evolve {
 	private static int n;
 	private static MongoCollection<Ticker> table;
 	private static BigFraction startVolumeConv;
-	private final static Logger log = LogManager.getLogger(Evolve.class);
+	private final static Logger log = LoggerFactory.getLogger(Evolve.class);
 
 	
 	public Evolve(HashMap<String,Object> start, MongoCollection<Ticker> table) {
@@ -240,7 +157,7 @@ public class Evolve {
 	    		.limit(100)
 	            .peek(statistics)
 	            .collect(toBestPhenotype());
-	    log.debug(statistics);
+	    log.debug(statistics.toString());
 		return result;
 	}
 }
