@@ -59,7 +59,7 @@ public class App {
 							+ "			+-----------------------+\n\n");
 					i++;
 					Evolve e = new Evolve(start, api.getTable());
-					Phenotype<AnyGene<Ticker>, Double>  result = e.run();
+                    Phenotype<AnyGene<Ticker>, Double> result = e.run();
 					String resultString = "";
 					Iterator<AnyGene<Ticker>> chromit = result.getGenotype().getChromosome().iterator();
 					
