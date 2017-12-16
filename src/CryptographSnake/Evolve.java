@@ -75,7 +75,7 @@ public class Evolve {
                         fit = new BigFraction(Math.sqrt(fit.multiply(new BigFraction(ticker.getTickerBid())).doubleValue()));
                     }
                     end = ticker.getTradePair().getQuote();
-                    fit = fit.subtract(fit.multiply(new BigFraction(0.1)));
+                    fit = fit.subtract(fit.multiply(new BigFraction(0.1)).add(fit.multiply(new BigFraction(0.01))));
 
                     Reference r = new Reference(Evolve.table);
                     if (!start.equals(Currency.BTC.getSymbol())) {
