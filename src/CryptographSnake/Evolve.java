@@ -75,9 +75,9 @@ public class Evolve {
         		if ( ticker.getTradePair().getBase().equals(start) || ticker.getTradePair().getQuote().equals(start) ){
         			
             		if (ticker.getTradePair().getBase().equals(start)){
-            			fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
+            			fit = fit.divide(new BigFraction(ticker.getTickerAsk()));
             		} else if (ticker.getTradePair().getQuote().equals(start)){
-            			fit = fit.divide(new BigFraction(ticker.getTickerBid()));
+            			fit = fit.multiply(new BigFraction(ticker.getTickerBid()));
             		}
         			
         			fit = fit.subtract(fit.multiply(new BigFraction(0.01)));        		
