@@ -55,7 +55,7 @@ public class Evolve {
         BigFraction volume;
         
         
-        if (!Currency.BTC.getSymbol().equals(startVolume)) {
+        if (!Currency.BTC.getSymbol().equals(startCurrency)) {
         	Reference r2 = new Reference(Evolve.table);
         	r2.setReferenceOf(startCurrency);
         	r2.setVolume(startVolume);
@@ -63,7 +63,7 @@ public class Evolve {
         	volume = r2.getConvertedValue();
         }else {
         	volume = startVolume;
-        }
+        }        
 		ArrayList<Double> fitnesses = new ArrayList<Double>();
 		
         for (int z = 0; z < g.length(); z++) {
