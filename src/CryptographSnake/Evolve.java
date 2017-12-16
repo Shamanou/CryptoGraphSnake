@@ -33,7 +33,6 @@ public class Evolve {
     private static String startCurrency;
     private static String currentCurrency;
     private static MongoCollection<Ticker> table;
-    private static BigFraction startVolumeConv;
     private static int N = 0;
     private final static Logger log = LoggerFactory.getLogger(Evolve.class);
 
@@ -48,7 +47,6 @@ public class Evolve {
     private static Double eval(Genotype<AnyGene<Ticker>> g) {
         BigFraction fitConv = new BigFraction(0.0);
         BigFraction fit = startVolume;
-        BigFraction prevConv = startVolumeConv;
         BigFraction volume;
 
         if (!Currency.BTC.getSymbol().equals(startCurrency)) {
@@ -64,6 +62,7 @@ public class Evolve {
 
         for (int z = 0; z < g.length(); z++) {
             String start = Evolve.startCurrency;
+            String end = null;
             for (int i = 0; i < g.getChromosome(z).length(); i++) {
                 Ticker ticker = g.getChromosome(z).getGene(i).getAllele();
 
@@ -74,13 +73,13 @@ public class Evolve {
                     } else if (ticker.getTradePair().getQuote().equals(start)) {
                         fit = fit.multiply(new BigFraction(ticker.getTickerBid()));
                     }
-
+                    end = ticker.getTradePair().getQuote();
                     fit = fit.subtract(fit.multiply(new BigFraction(0.01)));
 
                     Reference r = new Reference(Evolve.table);
                     if (!start.equals(Currency.BTC.getSymbol())) {
                         r.setReference(Currency.BTC.getSymbol());
-                        r.setReferenceOf(start);
+                        r.setReferenceOf(end);
                         r.setVolume(fit);
                         fitConv = r.getConvertedValue();
                     } else {
@@ -97,13 +96,13 @@ public class Evolve {
                     }
 
                     if (fitConv.doubleValue() > 0.0) {
-                        prevConv = fitConv.subtract(volume);
+                        fitConv = fitConv.subtract(volume);
                     }
                 } else {
                     break;
                 }
             }
-            fitnesses.add(prevConv.doubleValue());
+            fitnesses.add(fitConv.doubleValue());
         }
         return Collections.max(fitnesses);
 
