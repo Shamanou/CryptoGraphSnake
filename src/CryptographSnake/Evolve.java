@@ -73,7 +73,12 @@ public class Evolve {
         		        		
         		if ( ticker.getTradePair().getBase().equals(start) || ticker.getTradePair().getQuote().equals(start) ){
         			
-        			fit = fit.multiply(new BigFraction(1).divide(new BigFraction(ticker.getTickerAsk())));
+            		if (ticker.getTradePair().getBase().equals(start)){
+            			fit = fit.divide(new BigFraction(ticker.getTickerAsk()));
+            		} else if (ticker.getTradePair().getQuote().equals(start)){
+            			fit = fit.multiply(new BigFraction(ticker.getTickerBid()));
+            		}
+        			
         			fit = fit.subtract(fit.multiply(new BigFraction(0.01)));        		
         			
         			Reference r = new Reference(Evolve.table);
@@ -83,7 +88,8 @@ public class Evolve {
         				r.setVolume(fit);
         				fitConv = r.getConvertedValue();
         			} else {
-        				fitConv = fit;
+        				//if the value could not be converted return 0
+        				fitConv = new BigFraction(0.0);
         			}	
         			
         			if (ticker.getTradePair().getBase().equals(start)){

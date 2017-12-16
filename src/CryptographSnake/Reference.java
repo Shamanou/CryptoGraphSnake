@@ -43,11 +43,11 @@ public class Reference {
 		Bson sort = Sorts.descending("ask");
 		if (this.table.find(filter, Ticker.class).sort(sort).into(new ArrayList<Ticker>()).size() > 0) {
 			Ticker result = this.table.find(filter, Ticker.class).sort(sort).into(new ArrayList<Ticker>()).get(0);
-//    		if (reference.equals(result.getTradePair().getBase())){
-    			return this.volume.multiply(new BigFraction(1).divide(new BigFraction(result.getTickerAsk())));
-//    		} else if (reference.equals(result.getTradePair().getQuote())){
-//    			return this.volume.multiply(new BigFraction(1).divide(new BigFraction(1).divide(new BigFraction(result.getTickerBid()))));
-//    		}
+    		if (reference.equals(result.getTradePair().getBase())){
+    			return this.volume.divide(new BigFraction(result.getTickerAsk()));
+    		} else if (reference.equals(result.getTradePair().getQuote())){
+    			return this.volume.multiply(new BigFraction(result.getTickerBid()));
+    		}
 		}
 		return new BigFraction(0.0);
 	}
