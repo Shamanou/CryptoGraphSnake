@@ -63,7 +63,8 @@ public class Evolve {
         	volume = r2.getConvertedValue();
         }else {
         	volume = startVolume;
-        }        
+        }
+        
 		ArrayList<Double> fitnesses = new ArrayList<Double>();
 		
         for (int z = 0; z < g.length(); z++) {
@@ -74,9 +75,9 @@ public class Evolve {
         		if ( ticker.getTradePair().getBase().equals(start) || ticker.getTradePair().getQuote().equals(start) ){
         			
             		if (ticker.getTradePair().getBase().equals(start)){
-            			fit = fit.divide(new BigFraction(ticker.getTickerAsk()));
+            			fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
             		} else if (ticker.getTradePair().getQuote().equals(start)){
-            			fit = fit.multiply(new BigFraction(ticker.getTickerBid()));
+            			fit = fit.divide(new BigFraction(ticker.getTickerBid()));
             		}
         			
         			fit = fit.subtract(fit.multiply(new BigFraction(0.01)));        		
@@ -97,19 +98,13 @@ public class Evolve {
         			} else if (ticker.getTradePair().getQuote().equals(start)){
         				start = ticker.getTradePair().getBase();        				
         			}else {
-        				fitnesses.add(0.0);
         				break;
         			}
         			        			        			
         			if  (fitConv.doubleValue() > 0.0) { 
         				prevConv = fitConv.subtract(volume);
-        			}else {
-        				fitnesses.add(fitConv.doubleValue());
-        				break;
-        			}
-        			
+        			}        			
         		} else {
-        			fitnesses.add(0.0);
         			break;
         		}
         	}
