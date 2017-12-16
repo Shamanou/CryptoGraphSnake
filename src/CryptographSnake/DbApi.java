@@ -75,13 +75,13 @@ public class DbApi {
     }
 
     public ArrayList<HashMap<String, Object>> getStart() throws NotAvailableFromExchangeException, NotYetImplementedForExchangeException, ExchangeException, IOException {
-        Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallet("Main").getBalances();
+        Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallet("Trading").getBalances();
 
         Iterator<Currency> keyIt = wallet.keySet().iterator();
         ArrayList<HashMap<String, Object>> wv = new ArrayList<HashMap<String, Object>>();
 
         while (keyIt.hasNext()) {
-            Currency key = (Currency) keyIt.next();
+            Currency key = keyIt.next();
 
             if (wallet.get(key).getAvailable().doubleValue() > 0.0) {
                 HashMap<String, Object> map = new HashMap<String, Object>();
