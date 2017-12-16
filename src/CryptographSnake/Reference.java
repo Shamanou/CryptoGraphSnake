@@ -44,10 +44,10 @@ public class Reference {
             Ticker result = this.table.find(filter, Ticker.class).sort(sort).into(new ArrayList<Ticker>()).get(0);
             if (reference.equals(result.getTradePair().getBase())) {
                 BigFraction ask = new BigFraction(result.getTickerAsk());
-                return new BigFraction(1.0).divide(this.volume.multiply(ask));
+                return this.volume.divide(ask);
             } else if (reference.equals(result.getTradePair().getQuote())) {
                 BigFraction bid = new BigFraction(result.getTickerBid());
-                return new BigFraction(Math.sqrt(this.volume.multiply(bid).doubleValue()));
+                return this.volume.multiply(bid);
             }
         }
         return new BigFraction(0.0);

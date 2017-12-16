@@ -77,7 +77,6 @@ public class OrderExecutor {
                 log.info(val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() + " trade executed");
             } catch (Exception ex) {
                 log.warn("Could not execute order (" + val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() + "): " + ex.getMessage());
-                break;
             }
 
             log.debug("\n");

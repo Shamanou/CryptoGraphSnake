@@ -49,11 +49,11 @@ public class Evolve {
         BigFraction fit = startVolume;
         BigFraction volume;
 
-        if (!Currency.BTC.getSymbol().equals(startCurrency)) {
+        if (!Currency.BTC.getCurrencyCode().equals(startCurrency)) {
             Reference r2 = new Reference(Evolve.table);
             r2.setReferenceOf(startCurrency);
             r2.setVolume(startVolume);
-            r2.setReference(Currency.BTC.getSymbol());
+            r2.setReference(Currency.BTC.getCurrencyCode());
             volume = r2.getConvertedValue();
         } else {
             volume = startVolume;
@@ -62,38 +62,39 @@ public class Evolve {
         ArrayList<Double> fitnesses = new ArrayList<Double>();
 
         for (int z = 0; z < g.length(); z++) {
-            String start = Evolve.startCurrency;
             String end = Evolve.startCurrency;
             for (int i = 0; i < g.getChromosome(z).length(); i++) {
                 Ticker ticker = g.getChromosome(z).getGene(i).getAllele();
 
-                if (ticker.getTradePair().getBase().equals(start) || ticker.getTradePair().getQuote().equals(start)) {
+                if (ticker.getTradePair().getBase().equals(end) || ticker.getTradePair().getQuote().equals(end)) {
 
                     if (ticker.getTradePair().getBase().equals(end)) {
                         fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
                     } else if (ticker.getTradePair().getQuote().equals(end)) {
-                        fit = new BigFraction(Math.sqrt(fit.multiply(new BigFraction(ticker.getTickerBid())).doubleValue()));
+                        fit = fit.divide(new BigFraction(ticker.getTickerBid()));
                     }
-                    end = ticker.getTradePair().getQuote();
+                    if (end.equals(ticker.getTradePair().getQuote())) {
+                        end = ticker.getTradePair().getBase();
+                    } else {
+                        end = ticker.getTradePair().getQuote();
+                    }
                     BigFraction feeA = fit.multiply(new BigFraction(0.1));
                     BigFraction feeB = fit.multiply(new BigFraction(0.01));
 
                     fit = fit.subtract(feeA).subtract(feeB);
 
                     Reference r = new Reference(Evolve.table);
-                    if (!start.equals(Currency.BTC.getSymbol())) {
-                        r.setReference(Currency.BTC.getSymbol());
+                    if (!end.equals(Currency.BTC.getCurrencyCode())) {
+                        r.setReference(Currency.BTC.getCurrencyCode());
                         r.setReferenceOf(end);
                         r.setVolume(fit);
                         fitConv = r.getConvertedValue();
                     } else {
                         fitConv = fit;
                     }
-
                     if (fitConv.doubleValue() > 0.0) {
                         fitConv = fitConv.subtract(volume);
                     } else {
-                        fitConv = new BigFraction(0.0);
                         break;
                     }
                 } else {
