@@ -1,6 +1,7 @@
 package CryptographSnake;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -16,7 +17,7 @@ import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order.OrderType;
 import org.knowm.xchange.dto.trade.MarketOrder;
-import org.knowm.xchange.hitbtc.HitbtcExchange;
+import org.knowm.xchange.hitbtc.v2.HitbtcExchange;
 import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.trade.TradeService;
 import org.slf4j.Logger;
@@ -27,7 +28,7 @@ public class OrderExecutor {
     private MongoCollection<Ticker> table;
     private HashMap<String, Object> start;
     private Phenotype<AnyGene<Ticker>, Double> order;
-    private final Logger log = LoggerFactory.getLogger(OrderExecutor.class);
+    private static final Logger log = LoggerFactory.getLogger(OrderExecutor.class);
     private Exchange exchange = ExchangeFactory.INSTANCE.createExchange(HitbtcExchange.class.getName());
     private TradeService tradeService;
     private AccountService accountService;
@@ -57,18 +58,17 @@ public class OrderExecutor {
         while (it.hasNext()) {
             Ticker val = it.next().getAllele();
             MarketOrder order = null;
+            BigDecimal available = accountService.getAccountInfo().getWallet("Trading").getBalance(
+                    new Currency(inval)).getAvailable();
 
-            log.debug(accountService.getAccountInfo().getWallet("Trading").getBalance(
-                    new Currency(inval)).getTotal().toPlainString());
+            log.info(available.toPlainString());
 
             if (inval.equals(val.getTradePair().getQuote())) {
-                order = new MarketOrder(OrderType.BID, accountService.getAccountInfo().getWallet("Trading").getBalance(
-                        new Currency(inval)).getTotal(),
+                order = new MarketOrder(OrderType.BID, available,
                         new CurrencyPair(val.getTradePair().getBase(), val.getTradePair().getQuote()));
                 inval = val.getTradePair().getBase();
             } else if (inval.equals(val.getTradePair().getBase())) {
-                order = new MarketOrder(OrderType.ASK, accountService.getAccountInfo().getWallet("Trading").getBalance(
-                        new Currency(inval)).getTotal(),
+                order = new MarketOrder(OrderType.ASK, available,
                         new CurrencyPair(val.getTradePair().getBase(), val.getTradePair().getQuote()));
                 inval = val.getTradePair().getQuote();
             }
@@ -78,8 +78,6 @@ public class OrderExecutor {
             } catch (Exception ex) {
                 log.warn("Could not execute order (" + val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() + "): " + ex.getMessage());
             }
-
-            log.debug("\n");
             try {
                 Thread.sleep(150);
             } catch (InterruptedException e) {
