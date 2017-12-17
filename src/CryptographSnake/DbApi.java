@@ -89,11 +89,15 @@ public class DbApi {
                 map.put("value", wallet.get(key).getAvailable());
 
                 Reference r = new Reference(this.table);
-                r.setReference(Currency.BTC.getCurrencyCode());
-                r.setReferenceOf(((Currency) map.get("currency")).getCurrencyCode());
-                r.setVolume(new BigFraction(((BigDecimal) map.get("value")).doubleValue()));
+                if (!((Currency) map.get("currency")).getCurrencyCode().equals(Currency.BTC.getCurrencyCode())) {
+                    r.setReference(Currency.BTC.getCurrencyCode());
+                    r.setReferenceOf(((Currency) map.get("currency")).getCurrencyCode());
+                    r.setVolume(new BigFraction(((BigDecimal) map.get("value")).doubleValue()));
+                    map.put("value_conv", r.getConvertedValue());
+                } else {
+                    map.put("value_conv", new BigFraction(((BigDecimal) map.get("value")).doubleValue()));
+                }
 
-                map.put("value_conv", r.getConvertedValue());
                 wv.add(map);
             }
         }
