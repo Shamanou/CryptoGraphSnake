@@ -1,5 +1,11 @@
 /target/
 /src/main/java/com/shamanou/apikey
 /.idea
+1.0.iml
 cryptographsnake.iml
-
+/bin
+/.settings/*
+.project
+.factorypath
+.classpath
+.addOrder.py.swp
