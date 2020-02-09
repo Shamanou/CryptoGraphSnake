@@ -70,7 +70,7 @@ public class DbApi {
 
     public ArrayList<HashMap<String, Object>> getStart()
             throws NotAvailableFromExchangeException, NotYetImplementedForExchangeException, ExchangeException, IOException {
-        Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallet("Trading").getBalances();
+        Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallet("null").getBalances();
 
         Iterator<Currency> keyIt = wallet.keySet().iterator();
         ArrayList<HashMap<String, Object>> wv = new ArrayList<>();
@@ -106,16 +106,18 @@ public class DbApi {
         for (KrakenAssetPair symbol : symbols) {
             try {
                 TickerDto tickerDto = new TickerDto();
-                Ticker tk = marketDataService.getTicker(new CurrencyPair(symbol.getWsName()));
-                BigDecimal ask = tk.getAsk();
-                BigDecimal bid = tk.getBid();
+                if (symbol.getWsName() != null) {
+                    Ticker tk = marketDataService.getTicker(new CurrencyPair(symbol.getWsName()));
+                    BigDecimal ask = tk.getAsk();
+                    BigDecimal bid = tk.getBid();
 
-                if (bid != null
-                        && ask != null) {
-                    tickerDto.setTickerAsk(ask.doubleValue());
-                    tickerDto.setTickerBid(bid.doubleValue());
-                    tickerDto.setTradePair(new com.shamanou.TradePair(symbol.getBase(), symbol.getQuote()));
-                    table.insertOne(tickerDto);
+                    if (bid != null
+                            && ask != null) {
+                        tickerDto.setTickerAsk(ask.doubleValue());
+                        tickerDto.setTickerBid(bid.doubleValue());
+                        tickerDto.setTradePair(new com.shamanou.TradePair(symbol.getBase(), symbol.getQuote()));
+                        table.insertOne(tickerDto);
+                    }
                 }
             } catch (HttpStatusIOException | ExchangeException ex) {
                 log.warn(symbol.getBase() + symbol.getQuote() + " exited with " + ex.getMessage());
