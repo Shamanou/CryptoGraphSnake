@@ -1,18 +1,17 @@
-package CryptographSnake;
+package com.shamanou;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
 
-public final class Ticker {
+public final class TickerDto {
     private double tickerAsk;
     private double tickerBid;
     private List<ArrayList<Double>> feesRaw;
     private String feesVolumeCurrency;
-    private TradePair pair;
+    private com.shamanou.TradePair pair;
 
-
-    public Ticker() {}
+    public TickerDto() {}
 
     public double getTickerAsk() {
         return tickerAsk;
@@ -28,17 +27,6 @@ public final class Ticker {
 
     public void setFeesRaw(List<ArrayList<Double>> feesRaw) {
         this.feesRaw = feesRaw;
-    }
-
-    public void setFeesRaw(JSONArray feesRaw) {
-        ArrayList<ArrayList<Double>> out = new ArrayList<ArrayList<Double>>();
-        for (int i = 0; i < feesRaw.length(); i++) {
-            ArrayList<Double> tmp = new ArrayList<Double>();
-            tmp.add(feesRaw.getJSONArray(i).getDouble(1));
-            tmp.add(feesRaw.getJSONArray(i).getDouble(0));
-            out.add(tmp);
-        }
-        this.feesRaw = out;
     }
 
     public String getFeesVolumeCurrency() {
@@ -57,16 +45,11 @@ public final class Ticker {
         this.tickerBid = tickerBid;
     }
 
-    public TradePair getTradePair() {
+    public com.shamanou.TradePair getTradePair() {
         return this.pair;
     }
 
-    public void setTradePair(TradePair pair) {
+    public void setTradePair(com.shamanou.TradePair pair) {
         this.pair = pair;
-    }
-
-    @Override
-    public String toString() {
-        return this.pair.getBase() + this.pair.getQuote() + " ask:" + String.valueOf(this.tickerAsk) + " bid:" + String.valueOf(this.tickerBid);
     }
 }

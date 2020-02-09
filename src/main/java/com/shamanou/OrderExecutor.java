@@ -1,4 +1,4 @@
-package CryptographSnake;
+package com.shamanou;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -17,7 +17,7 @@ import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order.OrderType;
 import org.knowm.xchange.dto.trade.MarketOrder;
-import org.knowm.xchange.hitbtc.v2.HitbtcExchange;
+import org.knowm.xchange.kraken.KrakenExchange;
 import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.trade.TradeService;
 import org.slf4j.Logger;
@@ -25,38 +25,38 @@ import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoCollection;
 
 public class OrderExecutor {
-    private MongoCollection<Ticker> table;
+    private MongoCollection<TickerDto> table;
     private HashMap<String, Object> start;
-    private Phenotype<AnyGene<Ticker>, Double> order;
+    private Phenotype<AnyGene<TickerDto>, Double> order;
     private static final Logger log = LoggerFactory.getLogger(OrderExecutor.class);
-    private Exchange exchange = ExchangeFactory.INSTANCE.createExchange(HitbtcExchange.class.getName());
     private TradeService tradeService;
     private AccountService accountService;
 
 
-    public OrderExecutor(MongoCollection<Ticker> table, HashMap<String, Object> start, String k, String s) throws IOException {
+    public OrderExecutor(MongoCollection<TickerDto> table, HashMap<String, Object> start, String k, String s) throws IOException {
         this.start = start;
         this.setTable(table);
 
-        ExchangeSpecification exchangeSpecification = new ExchangeSpecification(HitbtcExchange.class.getName());
+        ExchangeSpecification exchangeSpecification = new ExchangeSpecification(KrakenExchange.class.getName());
         exchangeSpecification.setApiKey(k);
         exchangeSpecification.setSecretKey(s);
+        Exchange exchange = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
         exchange.applySpecification(exchangeSpecification);
         tradeService = exchange.getTradeService();
         accountService = exchange.getAccountService();
     }
 
-    public void setOrder(Phenotype<AnyGene<Ticker>, Double> result) {
+    public void setOrder(Phenotype<AnyGene<TickerDto>, Double> result) {
         this.order = result;
     }
 
-    public void ExecuteOrder() throws InvalidKeyException, NoSuchAlgorithmException, IOException {
-        Genotype<AnyGene<Ticker>> gt = this.order.getGenotype();
-        Chromosome<AnyGene<Ticker>> chrom = gt.getChromosome();
-        Iterator<AnyGene<Ticker>> it = chrom.iterator();
+    public void ExecuteOrder() throws IOException {
+        Genotype<AnyGene<TickerDto>> gt = this.order.getGenotype();
+        Chromosome<AnyGene<TickerDto>> chrom = gt.getChromosome();
+        Iterator<AnyGene<TickerDto>> it = chrom.iterator();
         String inval = ((Currency) this.start.get("currency")).getCurrencyCode();
         while (it.hasNext()) {
-            Ticker val = it.next().getAllele();
+            TickerDto val = it.next().getAllele();
             MarketOrder order = null;
             BigDecimal available = accountService.getAccountInfo().getWallet("Trading").getBalance(
                     new Currency(inval)).getAvailable();
@@ -86,11 +86,11 @@ public class OrderExecutor {
         }
     }
 
-    public MongoCollection<Ticker> getTable() {
+    public MongoCollection<TickerDto> getTable() {
         return table;
     }
 
-    public void setTable(MongoCollection<Ticker> table) {
+    public void setTable(MongoCollection<TickerDto> table) {
         this.table = table;
     }
 }

@@ -1,4 +1,4 @@
-package CryptographSnake;
+package com.shamanou;
 
 import static org.jenetics.engine.EvolutionResult.toBestPhenotype;
 import java.math.BigDecimal;
@@ -32,19 +32,19 @@ public class Evolve {
     private static BigFraction startVolume;
     private static String startCurrency;
     private static String currentCurrency;
-    private static MongoCollection<Ticker> table;
+    private static MongoCollection<TickerDto> table;
     private static int N = 0;
     private final static Logger log = LoggerFactory.getLogger(Evolve.class);
 
 
-    public Evolve(HashMap<String, Object> start, MongoCollection<Ticker> table) {
+    public Evolve(HashMap<String, Object> start, MongoCollection<TickerDto> table) {
         Evolve.startCurrency = ((Currency) start.get("currency")).getCurrencyCode();
         Evolve.currentCurrency = Evolve.startCurrency;
         Evolve.startVolume = new BigFraction(((BigDecimal) start.get("value")).doubleValue());
         Evolve.table = table;
     }
 
-    private static Double eval(Genotype<AnyGene<Ticker>> g) {
+    private static Double eval(Genotype<AnyGene<TickerDto>> g) {
         BigFraction fitConv = new BigFraction(0.0);
         BigFraction fit = startVolume;
         BigFraction volume;
@@ -64,19 +64,19 @@ public class Evolve {
         for (int z = 0; z < g.length(); z++) {
             String end = Evolve.startCurrency;
             for (int i = 0; i < g.getChromosome(z).length(); i++) {
-                Ticker ticker = g.getChromosome(z).getGene(i).getAllele();
+                TickerDto tickerDto = g.getChromosome(z).getGene(i).getAllele();
 
-                if (ticker.getTradePair().getBase().equals(end) || ticker.getTradePair().getQuote().equals(end)) {
+                if (tickerDto.getTradePair().getBase().equals(end) || tickerDto.getTradePair().getQuote().equals(end)) {
 
-                    if (ticker.getTradePair().getBase().equals(end)) {
-                        fit = fit.multiply(new BigFraction(ticker.getTickerAsk()));
-                    } else if (ticker.getTradePair().getQuote().equals(end)) {
-                        fit = fit.divide(new BigFraction(ticker.getTickerBid()));
+                    if (tickerDto.getTradePair().getBase().equals(end)) {
+                        fit = fit.multiply(new BigFraction(tickerDto.getTickerAsk()));
+                    } else if (tickerDto.getTradePair().getQuote().equals(end)) {
+                        fit = fit.divide(new BigFraction(tickerDto.getTickerBid()));
                     }
-                    if (end.equals(ticker.getTradePair().getQuote())) {
-                        end = ticker.getTradePair().getBase();
+                    if (end.equals(tickerDto.getTradePair().getQuote())) {
+                        end = tickerDto.getTradePair().getBase();
                     } else {
-                        end = ticker.getTradePair().getQuote();
+                        end = tickerDto.getTradePair().getQuote();
                     }
                     BigFraction feeA = fit.multiply(new BigFraction(0.1));
                     BigFraction feeB = fit.multiply(new BigFraction(0.01));
@@ -107,7 +107,7 @@ public class Evolve {
 
     }
 
-    private static Ticker getRandomTicker() {
+    private static TickerDto getRandomTicker() {
         if (N == 3) {
             N = 0;
             Evolve.currentCurrency = Evolve.startCurrency;
@@ -118,8 +118,8 @@ public class Evolve {
                 Filters.eq("pair.base", Evolve.currentCurrency),
                 Filters.eq("pair.quote", Evolve.currentCurrency));
         Bson sort = Sorts.descending("ask");
-        ArrayList<Ticker> result = table.find(Ticker.class).filter(filter).sort(sort).into(new ArrayList<Ticker>());
-        Ticker t = result.get(randomGenerator.nextInt(result.size()));
+        ArrayList<TickerDto> result = table.find(TickerDto.class).filter(filter).sort(sort).into(new ArrayList<TickerDto>());
+        TickerDto t = result.get(randomGenerator.nextInt(result.size()));
 
         if (t.getTradePair().getQuote().equals(Evolve.currentCurrency)) {
             Evolve.currentCurrency = t.getTradePair().getBase();
@@ -130,12 +130,12 @@ public class Evolve {
         return t;
     }
 
-    final Consumer<? super EvolutionResult<AnyGene<Ticker>, Double>> statistics = EvolutionStatistics.ofNumber();
+    final Consumer<? super EvolutionResult<AnyGene<TickerDto>, Double>> statistics = EvolutionStatistics.ofNumber();
 
-    public Phenotype<AnyGene<Ticker>, Double> run() {
-        AnyChromosome<Ticker> chrom = AnyChromosome.of(Evolve::getRandomTicker, 3);
+    public Phenotype<AnyGene<TickerDto>, Double> run() {
+        AnyChromosome<TickerDto> chrom = AnyChromosome.of(Evolve::getRandomTicker, 3);
 
-        final Engine<AnyGene<Ticker>, Double> engine = Engine
+        final Engine<AnyGene<TickerDto>, Double> engine = Engine
                 .builder(Evolve::eval, chrom)
                 .populationSize(100)
                 .optimize(Optimize.MAXIMUM)
@@ -144,7 +144,7 @@ public class Evolve {
                 .alterers(new SinglePointCrossover<>(0.05))
                 .build();
 
-        Phenotype<AnyGene<Ticker>, Double> result = engine.stream()
+        Phenotype<AnyGene<TickerDto>, Double> result = engine.stream()
                 .limit(limit.bySteadyFitness(5))
                 .parallel()
                 .limit(100)

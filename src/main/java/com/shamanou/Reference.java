@@ -1,4 +1,4 @@
-package CryptographSnake;
+package com.shamanou;
 
 import java.util.ArrayList;
 import org.apache.commons.math3.fraction.BigFraction;
@@ -11,9 +11,9 @@ public class Reference {
     private String reference;
     private String referenceOf;
     private BigFraction volume;
-    private MongoCollection<Ticker> table;
+    private MongoCollection<TickerDto> table;
 
-    public Reference(MongoCollection<Ticker> table) {
+    public Reference(MongoCollection<TickerDto> table) {
         this.table = table;
     }
 
@@ -40,12 +40,12 @@ public class Reference {
                 Filters.and(
                         Filters.eq("pair.base", this.referenceOf), Filters.eq("pair.quote", this.reference)));
         Bson sort = Sorts.descending("ask");
-        if (this.table.find(filter, Ticker.class).sort(sort).into(new ArrayList<Ticker>()).size() > 0) {
-            Ticker result = this.table.find(filter, Ticker.class).sort(sort).into(new ArrayList<Ticker>()).get(0);
-            if (reference.equals(result.getTradePair().getBase())) {
+        if (this.table.find(filter, TickerDto.class).sort(sort).into(new ArrayList<TickerDto>()).size() > 0) {
+            TickerDto result = this.table.find(filter, TickerDto.class).sort(sort).into(new ArrayList<TickerDto>()).get(0);
+            if (result.getTradePair().getBase().equals(reference)) {
                 BigFraction ask = new BigFraction(result.getTickerAsk());
                 return this.volume.divide(ask);
-            } else if (reference.equals(result.getTradePair().getQuote())) {
+            } else if (result.getTradePair().getQuote().equals(reference)) {
                 BigFraction bid = new BigFraction(result.getTickerBid());
                 return this.volume.multiply(bid);
             }

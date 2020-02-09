@@ -1,4 +1,4 @@
-package CryptographSnake;
+package com.shamanou;
 
 public class TradePair {
     private String base;

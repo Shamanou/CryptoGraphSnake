@@ -1,11 +1,10 @@
-package CryptographSnake;
+package com.shamanou;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import org.jenetics.AnyGene;
 import org.jenetics.Phenotype;
 import org.json.JSONException;
@@ -16,7 +15,7 @@ import org.slf4j.LoggerFactory;
 
 public class App {
 
-    public static void main(String[] args) throws InvalidKeyException {
+    public static void main(String[] args) {
         final Logger log = LoggerFactory.getLogger(App.class);
         DbApi api = null;
 
@@ -31,6 +30,7 @@ public class App {
         log.info("\n\n			Welcome to the CryptocurrencyGraphSnake\n			Developed by Shamanou van Leeuwen\n\n\n");
         while (true) {
             try {
+                assert api != null;
                 api.getTickerInformation();
             } catch (JSONException | IOException e1) {
                 e1.printStackTrace();
@@ -42,17 +42,16 @@ public class App {
                     ArrayList<HashMap<String, Object>> wallet = api.getStart();
 
                     HashMap<String, Object> start = wallet.get(i);
-                    OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start, key, secret);
+                    OrderExecutor orderExecutor = new com.shamanou.OrderExecutor(api.getTable(), start, key, secret);
 
                     log.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY nr. " + String.valueOf(i) + " - " + ((Currency) start.get("currency")).getDisplayName() + "\n			+-----------------------+\n\n");
-                    Evolve e = new Evolve(start, api.getTable());
-                    Phenotype<AnyGene<Ticker>, Double> result = e.run();
-                    String resultString = "";
-                    Iterator<AnyGene<Ticker>> chromit = result.getGenotype().getChromosome().iterator();
+                    com.shamanou.Evolve e = new com.shamanou.Evolve(start, api.getTable());
+                    Phenotype<AnyGene<TickerDto>, Double> result = e.run();
+                    StringBuilder resultString = new StringBuilder();
 
-                    while (chromit.hasNext()) {
-                        Ticker val = chromit.next().getAllele();
-                        resultString += val.getTradePair().getBase() + val.getTradePair().getQuote() + "\n";
+                    for (AnyGene<TickerDto> tickerAnyGene : result.getGenotype().getChromosome()) {
+                        TickerDto val = tickerAnyGene.getAllele();
+                        resultString.append(val.getTradePair().getBase()).append(val.getTradePair().getQuote()).append("\n");
                     }
 
                     log.info("Results:\n" + resultString + "\n");
@@ -60,7 +59,7 @@ public class App {
                         orderExecutor.setOrder(result);
                         orderExecutor.ExecuteOrder();
                     }
-                } catch (IndexOutOfBoundsException | IOException | InvalidKeyException | NoSuchAlgorithmException ex) {
+                } catch (IndexOutOfBoundsException | IOException ex) {
                     log.warn(ex.getMessage());
                     i = -1;
                 }
