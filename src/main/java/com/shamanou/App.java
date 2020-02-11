@@ -1,8 +1,6 @@
 package com.shamanou;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.jenetics.AnyGene;
@@ -39,13 +37,13 @@ public class App {
             log.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
             for (int i = 0; i < 3; i++) {
                 try {
-                    ArrayList<HashMap<String, Object>> wallet = api.getStart();
+                    ArrayList<Value> wallet = api.getStart();
 
-                    HashMap<String, Object> start = wallet.get(i);
+                    Value start = wallet.get(i);
                     OrderExecutor orderExecutor = new com.shamanou.OrderExecutor(api.getTable(), start, key, secret);
 
-                    log.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY nr. " + String.valueOf(i) + " - " + ((Currency) start.get("currency")).getDisplayName() + "\n			+-----------------------+\n\n");
-                    com.shamanou.Evolve e = new com.shamanou.Evolve(start, api.getTable());
+                    log.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY nr. " + i + " - " + start.getCurrency().getDisplayName() + "\n			+-----------------------+\n\n");
+                    Evolve e = new Evolve(start, api.getTable());
                     Phenotype<AnyGene<TickerDto>, Double> result = e.run();
                     StringBuilder resultString = new StringBuilder();
 
@@ -59,9 +57,12 @@ public class App {
                         orderExecutor.setOrder(result);
                         orderExecutor.ExecuteOrder();
                     }
-                } catch (IndexOutOfBoundsException | IOException ex) {
+                } catch (IOException | InterruptedException ex) {
                     log.warn(ex.getMessage());
                     i = -1;
+                } catch(IndexOutOfBoundsException ex){
+                    ex.printStackTrace();
+                    throw new IllegalArgumentException(ex);
                 }
             }
         }

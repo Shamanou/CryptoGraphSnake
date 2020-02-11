@@ -26,14 +26,13 @@ import com.mongodb.client.MongoCollection;
 
 public class OrderExecutor {
     private MongoCollection<TickerDto> table;
-    private HashMap<String, Object> start;
+    private Value start;
     private Phenotype<AnyGene<TickerDto>, Double> order;
     private static final Logger log = LoggerFactory.getLogger(OrderExecutor.class);
     private TradeService tradeService;
     private AccountService accountService;
 
-
-    public OrderExecutor(MongoCollection<TickerDto> table, HashMap<String, Object> start, String k, String s) throws IOException {
+    public OrderExecutor(MongoCollection<TickerDto> table, Value start, String k, String s) {
         this.start = start;
         this.setTable(table);
 
@@ -52,13 +51,14 @@ public class OrderExecutor {
 
     public void ExecuteOrder() throws IOException {
         Genotype<AnyGene<TickerDto>> gt = this.order.getGenotype();
-        Chromosome<AnyGene<TickerDto>> chrom = gt.getChromosome();
-        Iterator<AnyGene<TickerDto>> it = chrom.iterator();
-        String inval = ((Currency) this.start.get("currency")).getCurrencyCode();
+        Chromosome<AnyGene<TickerDto>> chromosome = gt.getChromosome();
+        Iterator<AnyGene<TickerDto>> it = chromosome.iterator();
+        Object[] currencyLabels = this.start.getCurrency().getCurrencyCodes().toArray();
+        String inval = (String)currencyLabels[currencyLabels.length - 1];
         while (it.hasNext()) {
             TickerDto val = it.next().getAllele();
             MarketOrder order = null;
-            BigDecimal available = accountService.getAccountInfo().getWallet("Trading").getBalance(
+            BigDecimal available = accountService.getAccountInfo().getWallets().get(null).getBalance(
                     new Currency(inval)).getAvailable();
 
             log.info(available.toPlainString());
@@ -79,15 +79,11 @@ public class OrderExecutor {
                 log.warn("Could not execute order (" + val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() + "): " + ex.getMessage());
             }
             try {
-                Thread.sleep(150);
+                Thread.sleep(50);
             } catch (InterruptedException e) {
                 log.warn(e.getMessage());
             }
         }
-    }
-
-    public MongoCollection<TickerDto> getTable() {
-        return table;
     }
 
     public void setTable(MongoCollection<TickerDto> table) {

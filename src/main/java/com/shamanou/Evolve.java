@@ -2,10 +2,7 @@ package com.shamanou;
 
 import static org.jenetics.engine.EvolutionResult.toBestPhenotype;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Consumer;
 import org.apache.commons.math3.fraction.BigFraction;
 import org.bson.conversions.Bson;
@@ -29,66 +26,69 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 
 public class Evolve {
-    private static BigFraction startVolume;
+    private static BigDecimal startVolume;
     private static String startCurrency;
     private static String currentCurrency;
     private static MongoCollection<TickerDto> table;
     private static int N = 0;
-    private final static Logger log = LoggerFactory.getLogger(Evolve.class);
+    private final static Logger LOG = LoggerFactory.getLogger(Evolve.class);
 
-
-    public Evolve(HashMap<String, Object> start, MongoCollection<TickerDto> table) {
-        Evolve.startCurrency = ((Currency) start.get("currency")).getCurrencyCode();
+    public Evolve(Value start, MongoCollection<TickerDto> table) {
+        Object[] currencyCodes = start.getCurrency().getCurrencyCodes().toArray();
+        Evolve.startCurrency = (String)currencyCodes[currencyCodes.length-1];
         Evolve.currentCurrency = Evolve.startCurrency;
-        Evolve.startVolume = new BigFraction(((BigDecimal) start.get("value")).doubleValue());
+        Evolve.startVolume = start.getValue();
         Evolve.table = table;
     }
 
     private static Double eval(Genotype<AnyGene<TickerDto>> g) {
-        BigFraction fitConv = new BigFraction(0.0);
-        BigFraction fit = startVolume;
-        BigFraction volume;
+        BigDecimal fitConv = BigDecimal.valueOf(0.0);
+        BigDecimal fit = startVolume;
+        BigDecimal volume = startVolume;
 
-        if (!Currency.BTC.getCurrencyCode().equals(startCurrency)) {
+        if (startCurrency.contains((String)Currency.BTC.getCurrencyCodes().toArray()[1])) {
             Reference r2 = new Reference(Evolve.table);
             r2.setReferenceOf(startCurrency);
             r2.setVolume(startVolume);
-            r2.setReference(Currency.BTC.getCurrencyCode());
-            volume = r2.getConvertedValue();
-        } else {
-            volume = startVolume;
+            r2.setReference(startCurrency);
+            try {
+                volume = r2.getConvertedValue();
+            } catch (IllegalArgumentException ignored){ }
         }
 
-        ArrayList<Double> fitnesses = new ArrayList<Double>();
-
+        ArrayList<Double> fitnesses = new ArrayList<>();
         for (int z = 0; z < g.length(); z++) {
             String end = Evolve.startCurrency;
             for (int i = 0; i < g.getChromosome(z).length(); i++) {
                 TickerDto tickerDto = g.getChromosome(z).getGene(i).getAllele();
 
-                if (tickerDto.getTradePair().getBase().equals(end) || tickerDto.getTradePair().getQuote().equals(end)) {
+                if (is(end, tickerDto.getTradePair().getBase())) {
+                    fit = fit.multiply(BigDecimal.valueOf(tickerDto.getTickerAsk()));
+                } else if (is(end, tickerDto.getTradePair().getQuote())) {
+                    fit = fit.divideToIntegralValue(BigDecimal.valueOf(tickerDto.getTickerBid()));
+                }
 
-                    if (tickerDto.getTradePair().getBase().equals(end)) {
-                        fit = fit.multiply(new BigFraction(tickerDto.getTickerAsk()));
-                    } else if (tickerDto.getTradePair().getQuote().equals(end)) {
-                        fit = fit.divide(new BigFraction(tickerDto.getTickerBid()));
-                    }
-                    if (end.equals(tickerDto.getTradePair().getQuote())) {
+                if (is(end, tickerDto.getTradePair().getBase()) || is(end, tickerDto.getTradePair().getQuote())) {
+                    if (tickerDto.getTradePair().getQuote().contains(end)) {
                         end = tickerDto.getTradePair().getBase();
                     } else {
                         end = tickerDto.getTradePair().getQuote();
                     }
-                    BigFraction feeA = fit.multiply(new BigFraction(0.1));
-                    BigFraction feeB = fit.multiply(new BigFraction(0.01));
+                    BigDecimal feeA = fit.multiply(new BigFraction(0.1).bigDecimalValue());
+                    BigDecimal feeB = fit.multiply(new BigFraction(0.01).bigDecimalValue());
 
                     fit = fit.subtract(feeA).subtract(feeB);
 
                     Reference r = new Reference(Evolve.table);
-                    if (!end.equals(Currency.BTC.getCurrencyCode())) {
-                        r.setReference(Currency.BTC.getCurrencyCode());
+                    if (end.equals(Currency.BTC.getCurrencyCodes().toArray()[1])) {
+                        r.setReference((String)Currency.BTC.getCurrencyCodes().toArray()[1]);
                         r.setReferenceOf(end);
                         r.setVolume(fit);
-                        fitConv = r.getConvertedValue();
+                        try {
+                            fitConv = r.getConvertedValue();
+                        }catch (IllegalArgumentException ex){
+                            break;
+                        }
                     } else {
                         fitConv = fit;
                     }
@@ -104,7 +104,10 @@ public class Evolve {
             fitnesses.add(fitConv.doubleValue());
         }
         return Collections.max(fitnesses);
+    }
 
+    private static boolean is(String end, String quote) {
+        return quote.contains(end);
     }
 
     private static TickerDto getRandomTicker() {
@@ -115,10 +118,10 @@ public class Evolve {
 
         Random randomGenerator = new Random();
         Bson filter = Filters.or(
-                Filters.eq("pair.base", Evolve.currentCurrency),
-                Filters.eq("pair.quote", Evolve.currentCurrency));
-        Bson sort = Sorts.descending("ask");
-        ArrayList<TickerDto> result = table.find(TickerDto.class).filter(filter).sort(sort).into(new ArrayList<TickerDto>());
+                Filters.regex("tradePair.base", Evolve.currentCurrency),
+                Filters.regex("tradePair.quote", Evolve.currentCurrency));
+        Bson sort = Sorts.descending("tickerAsk");
+        ArrayList<TickerDto> result = table.find(TickerDto.class).filter(filter).sort(sort).into(new ArrayList<>());
         TickerDto t = result.get(randomGenerator.nextInt(result.size()));
 
         if (t.getTradePair().getQuote().equals(Evolve.currentCurrency)) {
@@ -137,7 +140,7 @@ public class Evolve {
 
         final Engine<AnyGene<TickerDto>, Double> engine = Engine
                 .builder(Evolve::eval, chrom)
-                .populationSize(100)
+                .populationSize(500)
                 .optimize(Optimize.MAXIMUM)
                 .survivorsSelector(new TournamentSelector<>(10))
                 .offspringSelector(new RouletteWheelSelector<>())
@@ -150,7 +153,7 @@ public class Evolve {
                 .limit(100)
                 .peek(statistics)
                 .collect(toBestPhenotype());
-        log.info(statistics.toString());
+        LOG.info(statistics.toString());
         return result;
     }
 }

@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
-import org.apache.commons.math3.fraction.BigFraction;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
 import org.knowm.xchange.Exchange;
@@ -68,36 +67,40 @@ public class DbApi {
         return this.table;
     }
 
-    public ArrayList<HashMap<String, Object>> getStart()
-            throws NotAvailableFromExchangeException, NotYetImplementedForExchangeException, ExchangeException, IOException {
-        Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallet("null").getBalances();
+    public ArrayList<Value> getStart()
+            throws NotAvailableFromExchangeException, NotYetImplementedForExchangeException, ExchangeException, IOException, InterruptedException {
+        Thread.sleep(50);
+        Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallets().get(null).getBalances();
 
         Iterator<Currency> keyIt = wallet.keySet().iterator();
-        ArrayList<HashMap<String, Object>> wv = new ArrayList<>();
+        ArrayList<Value> wv = new ArrayList<>();
 
         while (keyIt.hasNext()) {
             Currency key = keyIt.next();
+            Value value = new Value();
 
             if (wallet.get(key).getAvailable().doubleValue() > 0.0) {
-                HashMap<String, Object> map = new HashMap<>();
-                map.put("currency", key);
-                map.put("value", wallet.get(key).getAvailable());
+                value.setCurrency(key);
+                value.setValue(wallet.get(key).getAvailable());
 
                 Reference r = new Reference(this.table);
-                if (!((Currency) map.get("currency")).getCurrencyCode().equals(Currency.BTC.getCurrencyCode())) {
-                    r.setReference(Currency.BTC.getCurrencyCode());
-                    r.setReferenceOf(((Currency) map.get("currency")).getCurrencyCode());
-                    r.setVolume(new BigFraction(((BigDecimal) map.get("value")).doubleValue()));
-                    map.put("value_conv", r.getConvertedValue());
+                if (!(key.getSymbol().equals(Currency.BTC.getSymbol()))) {
+                    r.setReference(Currency.BTC.getSymbol());
+                    r.setReferenceOf(key.getCurrencyCode());
+                    r.setVolume(wallet.get(key).getAvailable());
+                    try {
+                        value.setValueConverted(r.getConvertedValue());
+                    }catch (IllegalArgumentException ignored){
+                        value.setValueConverted(null);
+                    }
                 } else {
-                    map.put("value_conv", new BigFraction(((BigDecimal) map.get("value")).doubleValue()));
+                    value.setValueConverted(wallet.get(key).getAvailable());
                 }
-
-                wv.add(map);
+                wv.add(value);
             }
         }
 
-        wv.sort(Comparator.comparingDouble((HashMap<String, Object> z) -> ((BigFraction) z.get("value_conv")).doubleValue()));
+        wv.sort(Comparator.comparingDouble(value -> value.getValueConverted().orElse(new BigDecimal("0.0")).doubleValue()));
         Collections.reverse(wv);
         return wv;
     }
