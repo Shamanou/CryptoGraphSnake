@@ -69,7 +69,7 @@ public class DbApi {
 
     public ArrayList<Value> getStart()
             throws NotAvailableFromExchangeException, NotYetImplementedForExchangeException, ExchangeException, IOException, InterruptedException {
-        Thread.sleep(50);
+        Thread.sleep(5000);
         Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallets().get(null).getBalances();
 
         Iterator<Currency> keyIt = wallet.keySet().iterator();
@@ -101,7 +101,7 @@ public class DbApi {
         }
 
         wv.sort(Comparator.comparingDouble(value -> value.getValueConverted().orElse(new BigDecimal("0.0")).doubleValue()));
-        Collections.reverse(wv);
+        wv.sort(Comparator.comparingDouble(value -> value.getValue().doubleValue()));
         return wv;
     }
 

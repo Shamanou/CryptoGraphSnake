@@ -2,11 +2,9 @@ package com.shamanou;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import org.jenetics.AnyGene;
 import org.jenetics.Phenotype;
 import org.json.JSONException;
-import org.knowm.xchange.currency.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +33,7 @@ public class App {
             }
 
             log.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 10; i++) {
                 try {
                     ArrayList<Value> wallet = api.getStart();
 
@@ -55,7 +53,7 @@ public class App {
                     log.info("Results:\n" + resultString + "\n");
                     if (result.getFitness() > 0.0) {
                         orderExecutor.setOrder(result);
-                        orderExecutor.ExecuteOrder();
+                        orderExecutor.executeOrder();
                     }
                 } catch (IOException | InterruptedException ex) {
                     log.warn(ex.getMessage());

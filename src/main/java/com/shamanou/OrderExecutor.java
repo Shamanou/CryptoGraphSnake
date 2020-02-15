@@ -2,9 +2,6 @@ package com.shamanou;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Iterator;
 import org.jenetics.AnyGene;
 import org.jenetics.Chromosome;
@@ -17,7 +14,10 @@ import org.knowm.xchange.currency.Currency;
 import org.knowm.xchange.currency.CurrencyPair;
 import org.knowm.xchange.dto.Order.OrderType;
 import org.knowm.xchange.dto.trade.MarketOrder;
+import org.knowm.xchange.exceptions.ExchangeException;
 import org.knowm.xchange.kraken.KrakenExchange;
+import org.knowm.xchange.kraken.dto.trade.KrakenTrade;
+import org.knowm.xchange.kraken.service.KrakenTradeService;
 import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.trade.TradeService;
 import org.slf4j.Logger;
@@ -25,11 +25,10 @@ import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoCollection;
 
 public class OrderExecutor {
-    private MongoCollection<TickerDto> table;
     private Value start;
     private Phenotype<AnyGene<TickerDto>, Double> order;
     private static final Logger log = LoggerFactory.getLogger(OrderExecutor.class);
-    private TradeService tradeService;
+    private KrakenTradeService tradeService;
     private AccountService accountService;
 
     public OrderExecutor(MongoCollection<TickerDto> table, Value start, String k, String s) {
@@ -41,7 +40,7 @@ public class OrderExecutor {
         exchangeSpecification.setSecretKey(s);
         Exchange exchange = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
         exchange.applySpecification(exchangeSpecification);
-        tradeService = exchange.getTradeService();
+        tradeService = (KrakenTradeService)exchange.getTradeService();
         accountService = exchange.getAccountService();
     }
 
@@ -49,7 +48,7 @@ public class OrderExecutor {
         this.order = result;
     }
 
-    public void ExecuteOrder() throws IOException {
+    public void executeOrder() throws IOException {
         Genotype<AnyGene<TickerDto>> gt = this.order.getGenotype();
         Chromosome<AnyGene<TickerDto>> chromosome = gt.getChromosome();
         Iterator<AnyGene<TickerDto>> it = chromosome.iterator();
@@ -57,36 +56,46 @@ public class OrderExecutor {
         String inval = (String)currencyLabels[currencyLabels.length - 1];
         while (it.hasNext()) {
             TickerDto val = it.next().getAllele();
-            MarketOrder order = null;
-            BigDecimal available = accountService.getAccountInfo().getWallets().get(null).getBalance(
-                    new Currency(inval)).getAvailable();
+            MarketOrder order;
+            BigDecimal available = accountService.getAccountInfo()
+                    .getWallets().get(null).getBalance(new Currency(inval)).getAvailable();
+            available = available.min(available.multiply(new BigDecimal("0.026")));
 
-            log.info(available.toPlainString());
-
-            if (inval.equals(val.getTradePair().getQuote())) {
+            if ((val.getTradePair().getQuote()).contains(inval)) {
                 order = new MarketOrder(OrderType.BID, available,
-                        new CurrencyPair(val.getTradePair().getBase(), val.getTradePair().getQuote()));
+                        new CurrencyPair(val.getTradePair().getBase().length() > 3
+                                ? val.getTradePair().getBase().substring(1) : val.getTradePair().getBase(),
+                                val.getTradePair().getQuote().length() > 3
+                                ? val.getTradePair().getQuote().substring(1) : val.getTradePair().getQuote() ));
                 inval = val.getTradePair().getBase();
+                executeOrder(val, order);
             } else if (inval.equals(val.getTradePair().getBase())) {
                 order = new MarketOrder(OrderType.ASK, available,
-                        new CurrencyPair(val.getTradePair().getBase(), val.getTradePair().getQuote()));
+                        new CurrencyPair(val.getTradePair().getBase().length() > 3
+                                ? val.getTradePair().getBase().substring(1) : val.getTradePair().getBase(),
+                                val.getTradePair().getQuote().length() > 3
+                                        ? val.getTradePair().getQuote().substring(1) : val.getTradePair().getQuote() ));
                 inval = val.getTradePair().getQuote();
+                executeOrder(val, order);
             }
             try {
-                this.tradeService.placeMarketOrder(order);
-                log.info(val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() + " trade executed");
-            } catch (Exception ex) {
-                log.warn("Could not execute order (" + val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() + "): " + ex.getMessage());
-            }
-            try {
-                Thread.sleep(50);
+                Thread.sleep(5000);
             } catch (InterruptedException e) {
                 log.warn(e.getMessage());
+                break;
             }
         }
     }
 
+    private void executeOrder(TickerDto val, MarketOrder order) throws IOException {
+        try {
+            tradeService.placeKrakenMarketOrder(order);
+            log.warn( order.getType().name()+ " -> " + val.getTradePair().getBase() + " - " + val.getTradePair().getQuote() + " trade executed");
+        } catch (ExchangeException ex) {
+            log.warn("Could not execute order (" + order.getType().name()+ " -> " + order.getCurrencyPair().toString() + "): " + ex.getMessage());
+        }
+    }
+
     public void setTable(MongoCollection<TickerDto> table) {
-        this.table = table;
     }
 }

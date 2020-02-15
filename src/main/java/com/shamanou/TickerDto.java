@@ -3,6 +3,7 @@ package com.shamanou;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.JSONArray;
+import org.knowm.xchange.kraken.dto.marketdata.KrakenFee;
 
 public final class TickerDto {
     private double tickerAsk;
@@ -19,14 +20,6 @@ public final class TickerDto {
 
     public void setTickerAsk(double tickerAsk) {
         this.tickerAsk = tickerAsk;
-    }
-
-    public List<ArrayList<Double>> getFeesRaw() {
-        return feesRaw;
-    }
-
-    public void setFeesRaw(List<ArrayList<Double>> feesRaw) {
-        this.feesRaw = feesRaw;
     }
 
     public String getFeesVolumeCurrency() {
