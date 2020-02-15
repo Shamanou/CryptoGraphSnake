@@ -100,8 +100,7 @@ public class DbApi {
             }
         }
 
-        wv.sort(Comparator.comparingDouble(value -> value.getValueConverted().orElse(new BigDecimal("0.0")).doubleValue()));
-        wv.sort(Comparator.comparingDouble(value -> value.getValue().doubleValue()));
+        wv.sort(new WalletComparator());
         return wv;
     }
 
