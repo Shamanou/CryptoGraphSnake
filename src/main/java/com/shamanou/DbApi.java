@@ -68,7 +68,11 @@ public class DbApi {
     }
 
     public ArrayList<Value> getStart()
-            throws NotAvailableFromExchangeException, NotYetImplementedForExchangeException, ExchangeException, IOException, InterruptedException {
+            throws NotAvailableFromExchangeException,
+            NotYetImplementedForExchangeException,
+            ExchangeException,
+            IOException,
+            InterruptedException {
         Thread.sleep(5000);
         Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallets().get(null).getBalances();
 
@@ -91,7 +95,7 @@ public class DbApi {
                     try {
                         value.setValueConverted(r.getConvertedValue());
                     }catch (IllegalArgumentException ignored){
-                        value.setValueConverted(null);
+                        value.setValueConverted(new BigDecimal("0.0"));
                     }
                 } else {
                     value.setValueConverted(wallet.get(key).getAvailable());
@@ -104,7 +108,10 @@ public class DbApi {
         return wv;
     }
 
-    public void getTickerInformation() throws NotAvailableFromExchangeException, NotYetImplementedForExchangeException, ExchangeException, IOException {
+    public void getTickerInformation() throws NotAvailableFromExchangeException,
+            NotYetImplementedForExchangeException,
+            ExchangeException,
+            IOException {
         for (KrakenAssetPair symbol : symbols) {
             try {
                 TickerDto tickerDto = new TickerDto();
@@ -113,8 +120,7 @@ public class DbApi {
                     BigDecimal ask = tk.getAsk();
                     BigDecimal bid = tk.getBid();
 
-                    if (bid != null
-                            && ask != null) {
+                    if (bid != null && ask != null) {
                         tickerDto.setTickerAsk(ask.doubleValue());
                         tickerDto.setTickerBid(bid.doubleValue());
                         tickerDto.setTradePair(new com.shamanou.TradePair(symbol.getBase(), symbol.getQuote()));

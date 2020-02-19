@@ -2,11 +2,13 @@ package com.shamanou;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Iterator;
-import org.jenetics.AnyGene;
-import org.jenetics.Chromosome;
-import org.jenetics.Genotype;
-import org.jenetics.Phenotype;
+
+import io.jenetics.AnyGene;
+import io.jenetics.Chromosome;
+import io.jenetics.Genotype;
+import io.jenetics.Phenotype;
 import org.knowm.xchange.Exchange;
 import org.knowm.xchange.ExchangeFactory;
 import org.knowm.xchange.ExchangeSpecification;
@@ -16,10 +18,8 @@ import org.knowm.xchange.dto.Order.OrderType;
 import org.knowm.xchange.dto.trade.MarketOrder;
 import org.knowm.xchange.exceptions.ExchangeException;
 import org.knowm.xchange.kraken.KrakenExchange;
-import org.knowm.xchange.kraken.dto.trade.KrakenTrade;
 import org.knowm.xchange.kraken.service.KrakenTradeService;
 import org.knowm.xchange.service.account.AccountService;
-import org.knowm.xchange.service.trade.TradeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoCollection;
@@ -58,23 +58,36 @@ public class OrderExecutor {
             TickerDto val = it.next().getAllele();
             MarketOrder order;
             BigDecimal available = accountService.getAccountInfo()
-                    .getWallets().get(null).getBalance(new Currency(inval)).getAvailable();
-            available = available.min(available.multiply(new BigDecimal("0.026")));
+                    .getWallets().get(null).getBalance(new Currency(inval)).getAvailable().setScale(3, RoundingMode.DOWN);
+            available = available.subtract(available.multiply(new BigDecimal("0.26")));
 
             if ((val.getTradePair().getQuote()).contains(inval)) {
                 order = new MarketOrder(OrderType.BID, available,
-                        new CurrencyPair(val.getTradePair().getBase().length() > 3
-                                ? val.getTradePair().getBase().substring(1) : val.getTradePair().getBase(),
-                                val.getTradePair().getQuote().length() > 3
-                                ? val.getTradePair().getQuote().substring(1) : val.getTradePair().getQuote() ));
+                        new CurrencyPair(val.getTradePair().getBase().length() == 4
+                                && (val.getTradePair().getBase().startsWith("X")
+                                || val.getTradePair().getBase().startsWith("Z"))
+                                ? val.getTradePair().getBase().substring(1,4)
+                                : val.getTradePair().getBase(),
+                                val.getTradePair().getQuote().length() == 4
+                                        && (val.getTradePair().getQuote().startsWith("X")
+                                        || val.getTradePair().getQuote().startsWith("Z"))
+                                        ? val.getTradePair().getQuote().substring(1,4)
+                                : val.getTradePair().getQuote()));
                 inval = val.getTradePair().getBase();
                 executeOrder(val, order);
             } else if (inval.equals(val.getTradePair().getBase())) {
                 order = new MarketOrder(OrderType.ASK, available,
-                        new CurrencyPair(val.getTradePair().getBase().length() > 3
-                                ? val.getTradePair().getBase().substring(1) : val.getTradePair().getBase(),
-                                val.getTradePair().getQuote().length() > 3
-                                        ? val.getTradePair().getQuote().substring(1) : val.getTradePair().getQuote() ));
+                        new CurrencyPair(val.getTradePair().getBase().length() == 4
+                                && (val.getTradePair().getBase().startsWith("X")
+                                || val.getTradePair().getBase().startsWith("Z"))
+
+                                ? val.getTradePair().getBase().substring(1,4)
+                                : val.getTradePair().getBase(),
+                                val.getTradePair().getQuote().length() == 4
+                                        && (val.getTradePair().getQuote().startsWith("X")
+                                        || val.getTradePair().getQuote().startsWith("Z"))
+                                        ? val.getTradePair().getQuote().substring(1,4)
+                                        : val.getTradePair().getQuote()));
                 inval = val.getTradePair().getQuote();
                 executeOrder(val, order);
             }

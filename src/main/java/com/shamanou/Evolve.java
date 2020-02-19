@@ -1,29 +1,22 @@
 package com.shamanou;
 
-import static org.jenetics.engine.EvolutionResult.toBestPhenotype;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import org.apache.commons.math3.fraction.BigFraction;
+import java.util.stream.Collectors;
+
+import com.mongodb.client.model.Filters;
+import io.jenetics.*;
+import io.jenetics.engine.Engine;
+import io.jenetics.engine.EvolutionResult;
+import io.jenetics.engine.EvolutionStatistics;
+import io.jenetics.engine.Limits;
 import org.bson.conversions.Bson;
-import org.jenetics.AnyChromosome;
-import org.jenetics.AnyGene;
-import org.jenetics.Genotype;
-import org.jenetics.Optimize;
-import org.jenetics.Phenotype;
-import org.jenetics.RouletteWheelSelector;
-import org.jenetics.SinglePointCrossover;
-import org.jenetics.TournamentSelector;
-import org.jenetics.engine.Engine;
-import org.jenetics.engine.EvolutionResult;
-import org.jenetics.engine.EvolutionStatistics;
-import org.jenetics.engine.limit;
 import org.knowm.xchange.currency.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Sorts;
 
 public class Evolve {
     private static BigDecimal startVolume;
@@ -31,83 +24,69 @@ public class Evolve {
     private static String currentCurrency;
     private static MongoCollection<TickerDto> table;
     private static int N = 0;
-    private final static Logger LOG = LoggerFactory.getLogger(Evolve.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Evolve.class);
+    private static String referenceCurrency;
 
     public Evolve(Value start, MongoCollection<TickerDto> table) {
-        Object[] currencyCodes = start.getCurrency().getCurrencyCodes().toArray();
+        final Object[] currencyCodes = start.getCurrency().getCurrencyCodes().toArray();
         Evolve.startCurrency = (String)currencyCodes[currencyCodes.length-1];
         Evolve.currentCurrency = Evolve.startCurrency;
         Evolve.startVolume = start.getValue();
         Evolve.table = table;
+        referenceCurrency = (String) Currency.BTC.getCurrencyCodes().toArray()[1];
     }
 
-    private static Double eval(Genotype<AnyGene<TickerDto>> g) {
-        BigDecimal fitConv = BigDecimal.valueOf(0.0);
-        BigDecimal fit = startVolume;
-        BigDecimal volume = startVolume;
+    private static double eval(Genotype<AnyGene<TickerDto>> genome) {
+        BigDecimal fitConv;
+        BigDecimal referenceVolume = BigDecimal.ZERO;
 
-        if (startCurrency.contains((String)Currency.BTC.getCurrencyCodes().toArray()[1])) {
+        if (startCurrency.contains(referenceCurrency)) {
             Reference r2 = new Reference(Evolve.table);
             r2.setReferenceOf(startCurrency);
             r2.setVolume(startVolume);
             r2.setReference(startCurrency);
-            try {
-                volume = r2.getConvertedValue();
-            } catch (IllegalArgumentException ignored){ }
+            referenceVolume = r2.getConvertedValue();
         }
 
-        ArrayList<Double> fitnesses = new ArrayList<>();
-        for (int z = 0; z < g.length(); z++) {
-            String end = Evolve.startCurrency;
-            for (int i = 0; i < g.getChromosome(z).length(); i++) {
-                TickerDto tickerDto = g.getChromosome(z).getGene(i).getAllele();
-
-                if (is(end, tickerDto.getTradePair().getBase())) {
-                    fit = fit.multiply(BigDecimal.valueOf(tickerDto.getTickerAsk()));
-                } else if (is(end, tickerDto.getTradePair().getQuote())) {
-                    fit = fit.divideToIntegralValue(BigDecimal.valueOf(tickerDto.getTickerBid()));
-                }
-
-                if (is(end, tickerDto.getTradePair().getBase()) || is(end, tickerDto.getTradePair().getQuote())) {
-                    if (tickerDto.getTradePair().getQuote().contains(end)) {
-                        end = tickerDto.getTradePair().getBase();
-                    } else {
-                        end = tickerDto.getTradePair().getQuote();
-                    }
-                    BigDecimal feeA = fit.multiply(new BigFraction(0.1).bigDecimalValue());
-                    BigDecimal feeB = fit.multiply(new BigFraction(0.01).bigDecimalValue());
-
-                    fit = fit.subtract(feeA).subtract(feeB);
-
-                    Reference r = new Reference(Evolve.table);
-                    if (end.equals(Currency.BTC.getCurrencyCodes().toArray()[1])) {
-                        r.setReference((String)Currency.BTC.getCurrencyCodes().toArray()[1]);
-                        r.setReferenceOf(end);
-                        r.setVolume(fit);
-                        try {
-                            fitConv = r.getConvertedValue();
-                        }catch (IllegalArgumentException ex){
-                            break;
-                        }
-                    } else {
-                        fitConv = fit;
-                    }
-                    if (fitConv.doubleValue() > 0.0) {
-                        fitConv = fitConv.subtract(volume);
-                    } else {
-                        break;
-                    }
-                } else {
-                    break;
-                }
+        List<TickerDto> genes = genome.stream().flatMap(chromosome -> {
+            ArrayList<TickerDto> out = new ArrayList<>();
+            for (int i = 0; i < chromosome.length(); i++){
+                out.add(chromosome.getGene(i).getAllele());
             }
-            fitnesses.add(fitConv.doubleValue());
-        }
-        return Collections.max(fitnesses);
-    }
+            return out.stream();
+        }).collect(Collectors.toList());
 
-    private static boolean is(String end, String quote) {
-        return quote.contains(end);
+        if (genes.stream().anyMatch(Objects::isNull)){
+            return 0.0;
+        }
+
+        AtomicReference<Double> fit = new AtomicReference<>(startVolume.doubleValue());
+        List<Double> fitnessOfGenes = genes.stream().map(tickerDto -> {
+            double feePercentage = 0.26;
+            if (Evolve.currentCurrency.contains(tickerDto.getTradePair().getBase())) {
+                fit.updateAndGet(fitness -> {
+                    fitness *= tickerDto.getTickerBid();
+                    fitness -= fitness * feePercentage;
+                    return fitness;
+                });
+                Evolve.currentCurrency  = tickerDto.getTradePair().getQuote();
+            } else if (Evolve.currentCurrency.contains(tickerDto.getTradePair().getQuote())) {
+                fit.updateAndGet(fitness -> {
+                    fitness *= tickerDto.getTickerAsk();
+                    fitness -= fitness * feePercentage;;
+                    return fitness;
+                });
+                Evolve.currentCurrency = tickerDto.getTradePair().getBase();
+            }
+            return fit.get();
+        }).collect(Collectors.toList());
+
+        Reference reference = new Reference(Evolve.table);
+        reference.setReference(referenceCurrency);
+        reference.setReferenceOf(Evolve.startCurrency);
+        reference.setVolume(BigDecimal.valueOf(fitnessOfGenes.get(2)));
+        fitConv = reference.getConvertedValue();
+        return fitConv.subtract(referenceVolume).doubleValue();
     }
 
     private static TickerDto getRandomTicker() {
@@ -120,10 +99,8 @@ public class Evolve {
         Bson filter = Filters.or(
                 Filters.regex("tradePair.base", Evolve.currentCurrency),
                 Filters.regex("tradePair.quote", Evolve.currentCurrency));
-        Bson sort = Sorts.descending("tickerAsk");
-        ArrayList<TickerDto> result = table.find(TickerDto.class).filter(filter).sort(sort).into(new ArrayList<>());
+        ArrayList<TickerDto> result = table.find(TickerDto.class).filter(filter).into(new ArrayList<>());
         TickerDto t = result.get(randomGenerator.nextInt(result.size()));
-
         if (t.getTradePair().getQuote().equals(Evolve.currentCurrency)) {
             Evolve.currentCurrency = t.getTradePair().getBase();
         } else if (t.getTradePair().getBase().equals(Evolve.currentCurrency)) {
@@ -136,10 +113,10 @@ public class Evolve {
     final Consumer<? super EvolutionResult<AnyGene<TickerDto>, Double>> statistics = EvolutionStatistics.ofNumber();
 
     public Phenotype<AnyGene<TickerDto>, Double> run() {
-        AnyChromosome<TickerDto> chrom = AnyChromosome.of(Evolve::getRandomTicker, 3);
+        AnyChromosome<TickerDto> chromosome = AnyChromosome.of(Evolve::getRandomTicker, 3);
 
         final Engine<AnyGene<TickerDto>, Double> engine = Engine
-                .builder(Evolve::eval, chrom)
+                .builder(Evolve::eval, chromosome)
                 .populationSize(500)
                 .optimize(Optimize.MAXIMUM)
                 .survivorsSelector(new TournamentSelector<>(10))
@@ -148,11 +125,11 @@ public class Evolve {
                 .build();
 
         Phenotype<AnyGene<TickerDto>, Double> result = engine.stream()
-                .limit(limit.bySteadyFitness(5))
+                .limit(Limits.bySteadyFitness(50))
                 .parallel()
                 .limit(100)
                 .peek(statistics)
-                .collect(toBestPhenotype());
+                .collect(EvolutionResult.toBestPhenotype());
         LOG.info(statistics.toString());
         return result;
     }

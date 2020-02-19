@@ -2,8 +2,9 @@ package com.shamanou;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import org.jenetics.AnyGene;
-import org.jenetics.Phenotype;
+
+import io.jenetics.AnyGene;
+import io.jenetics.Phenotype;
 import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,12 +34,12 @@ public class App {
             }
 
             log.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 5; i++) {
                 try {
                     ArrayList<Value> wallet = api.getStart();
 
                     Value start = wallet.get(i);
-                    OrderExecutor orderExecutor = new com.shamanou.OrderExecutor(api.getTable(), start, key, secret);
+                    OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start, key, secret);
 
                     log.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY nr. " + i + " - " + start.getCurrency().getDisplayName() + "\n			+-----------------------+\n\n");
                     Evolve e = new Evolve(start, api.getTable());
@@ -46,8 +47,10 @@ public class App {
                     StringBuilder resultString = new StringBuilder();
 
                     for (AnyGene<TickerDto> tickerAnyGene : result.getGenotype().getChromosome()) {
-                        TickerDto val = tickerAnyGene.getAllele();
-                        resultString.append(val.getTradePair().getBase()).append(val.getTradePair().getQuote()).append("\n");
+                        if(tickerAnyGene.getAllele() != null) {
+                            TickerDto val = tickerAnyGene.getAllele();
+                            resultString.append(val.getTradePair().getBase()).append(val.getTradePair().getQuote()).append("\n");
+                        }
                     }
 
                     log.info("Results:\n" + resultString + "\n");
@@ -58,7 +61,7 @@ public class App {
                 } catch (IOException | InterruptedException ex) {
                     log.warn(ex.getMessage());
                     i = -1;
-                } catch(IndexOutOfBoundsException ex){
+                } catch (IndexOutOfBoundsException ex) {
                     ex.printStackTrace();
                     throw new IllegalArgumentException(ex);
                 }

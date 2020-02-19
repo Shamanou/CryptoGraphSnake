@@ -1,12 +1,11 @@
 package com.shamanou;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
-import org.apache.commons.math3.fraction.BigFraction;
 import org.bson.conversions.Bson;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Sorts;
 
 public class Reference {
     private String reference;
@@ -29,24 +28,24 @@ public class Reference {
     public BigDecimal getConvertedValue() {
         Bson filter = Filters.or(
                 Filters.and(
-                        Filters.eq("pair.base", this.reference), Filters.eq("pair.quote", this.referenceOf)),
+                        Filters.regex("tradePair.base", this.reference), Filters.regex("tradePair.quote", this.referenceOf)),
                 Filters.and(
-                        Filters.eq("pair.base", this.referenceOf), Filters.eq("pair.quote", this.reference)));
-        Bson sort = Sorts.descending("ask");
-        if (this.table.find(filter, TickerDto.class).sort(sort).into(new ArrayList<>()).size() > 0) {
-            TickerDto result = this.table.find(filter, TickerDto.class).sort(sort).into(new ArrayList<>()).get(0);
+                        Filters.regex("tradePair.base", this.referenceOf), Filters.regex("tradePair.quote", this.reference)));
+        if (this.table.find(filter, TickerDto.class).into(new ArrayList<>()).size() > 0) {
+            TickerDto result = this.table.find(filter, TickerDto.class).into(new ArrayList<>()).get(0);
+            BigDecimal factor;
             if (result.getTradePair().getBase().equals(reference)) {
-                BigFraction ask = new BigFraction(result.getTickerAsk());
-                return this.volume.divide(ask.bigDecimalValue());
+                factor = BigDecimal.valueOf(result.getTickerBid());
+                return this.volume.multiply(factor);
             } else if (result.getTradePair().getQuote().equals(reference)) {
-                BigFraction bid = new BigFraction(result.getTickerBid());
-                return this.volume.multiply(bid.bigDecimalValue());
+                factor = BigDecimal.valueOf(result.getTickerAsk());
+                return this.volume.divide(factor, RoundingMode.FLOOR);
             }
         }
-        throw new IllegalArgumentException("invalid conversion");
+        return BigDecimal.ZERO;
     }
 
-    public void setVolume(BigDecimal bigFraction) {
-        this.volume = bigFraction;
+    public void setVolume(BigDecimal volume) {
+        this.volume = volume;
     }
 }

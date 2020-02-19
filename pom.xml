@@ -30,11 +30,6 @@
     	<version>20190722</version>
 	</dependency>
     <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-collections4</artifactId>
-        <version>4.1</version>
-    </dependency>
-    <dependency>
         <groupId>org.mongodb</groupId>
         <artifactId>mongodb-driver</artifactId>
         <version>3.5.0-SNAPSHOT</version>
@@ -44,15 +39,10 @@
           <artifactId>bson</artifactId>
           <version>3.12.1</version>
       </dependency>
-      <dependency>
-    <groupId>org.apache.commons</groupId>
-    <artifactId>commons-math3</artifactId>
-    <version>3.2</version>
-    </dependency>
         <dependency>
         <groupId>io.jenetics</groupId>
         <artifactId>jenetics</artifactId>
-        <version>3.8.0</version>
+        <version>5.1.0</version>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
