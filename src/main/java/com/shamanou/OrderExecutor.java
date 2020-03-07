@@ -62,11 +62,11 @@ public class OrderExecutor {
                     .getWallets().get(null).getBalance(new Currency(inval)).getAvailable();
             if ((val.getTradePair().getQuote()).contains(inval)) {
 
-                Reference reference = new Reference(this.table);
-                reference.setReference(val.getTradePair().getQuote());
-                reference.setReferenceOf(val.getTradePair().getBase());
-                reference.setVolume(available);
-                available = reference.getConvertedValue()
+//                Reference reference = new Reference(this.table);
+//                reference.setReference(val.getTradePair().getQuote());
+//                reference.setReferenceOf(inv);
+//                reference.setVolume(available);
+                available = available
                         .subtract(available.multiply(new BigDecimal("0.26"))).setScale(3, RoundingMode.DOWN);
 
                 order = getMarketOrder(val, available, OrderType.ASK);

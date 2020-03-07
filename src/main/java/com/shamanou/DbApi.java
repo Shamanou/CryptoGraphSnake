@@ -21,7 +21,9 @@ import org.knowm.xchange.exceptions.NotAvailableFromExchangeException;
 import org.knowm.xchange.exceptions.NotYetImplementedForExchangeException;
 import org.knowm.xchange.kraken.KrakenExchange;
 import org.knowm.xchange.kraken.dto.marketdata.KrakenAssetPair;
+import org.knowm.xchange.kraken.dto.marketdata.KrakenAssetPairs;
 import org.knowm.xchange.kraken.service.KrakenMarketDataService;
+import org.knowm.xchange.kraken.service.KrakenTradeService;
 import org.knowm.xchange.service.account.AccountService;
 import org.knowm.xchange.service.marketdata.MarketDataService;
 import org.slf4j.Logger;
@@ -38,8 +40,45 @@ public class DbApi {
     private MarketDataService marketDataService;
     private Collection<KrakenAssetPair> symbols;
     private AccountService accountService;
+    private KrakenAssetPairs pairs;
+    private Map<String, Float> minimumOrderSize = new HashMap<>();
 
     public DbApi(String key, String secret) throws IOException {
+        minimumOrderSize.put("ALGO", 50F);
+        minimumOrderSize.put("REP", 0.3F);
+        minimumOrderSize.put("BAT", 50F);
+        minimumOrderSize.put("XBT", 0.002F);
+        minimumOrderSize.put("BCH",0.000002F);
+        minimumOrderSize.put("ADA",1F);
+        minimumOrderSize.put("LINK",10F);
+        minimumOrderSize.put("ATOM",1F);
+        minimumOrderSize.put("DAI",10F);
+        minimumOrderSize.put("DASH",0.03F);
+        minimumOrderSize.put("XDG",3000F);
+        minimumOrderSize.put("EOS",3F);
+        minimumOrderSize.put("ETH",0.02F);
+        minimumOrderSize.put("ETC",0.3F);
+        minimumOrderSize.put("GNO",0.02F);
+        minimumOrderSize.put("ICX",50F);
+        minimumOrderSize.put("LSK",10F);
+        minimumOrderSize.put("LTC",0.1F);
+        minimumOrderSize.put("XMR",0.1F);
+        minimumOrderSize.put("NANO",10F);
+        minimumOrderSize.put("OMG",10F);
+        minimumOrderSize.put("PAXG",0.01F);
+        minimumOrderSize.put("QTUM",0.1F);
+        minimumOrderSize.put("XRP",30F);
+        minimumOrderSize.put("SC",5000F);
+        minimumOrderSize.put("XLM",30F);
+        minimumOrderSize.put("USDT",5F);
+        minimumOrderSize.put("XTZ",1F);
+        minimumOrderSize.put("TRX",500F);
+        minimumOrderSize.put("USDC",5F);
+        minimumOrderSize.put("MLN",0.1F);
+        minimumOrderSize.put("WAVES",10F);
+        minimumOrderSize.put("ZEC",0.03F);
+
+
 
         CodecRegistry pojoCodecRegistry = fromRegistries(
                 fromProviders(PojoCodecProvider.builder().register(TickerDto.class, TradePair.class).build()),
@@ -60,7 +99,8 @@ public class DbApi {
         Exchange exchange = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
         exchange.applySpecification(exchangeSpecification);
         marketDataService = exchange.getMarketDataService();
-        symbols = ((KrakenMarketDataService) exchange.getMarketDataService()).getKrakenAssetPairs().getAssetPairMap().values();
+        pairs = ((KrakenMarketDataService) exchange.getMarketDataService()).getKrakenAssetPairs();
+        symbols = pairs.getAssetPairMap().values();
         accountService = exchange.getAccountService();
     }
 
@@ -89,7 +129,7 @@ public class DbApi {
                 value.setValue(wallet.get(key).getAvailable());
 
                 Reference reference = new Reference(this.table);
-                reference.setReference("XXBT");
+                reference.setReference("ZEUR");
                 reference.setReferenceOf(key.getIso4217Currency().getSymbol());
                 reference.setVolume(wallet.get(key).getAvailable());
                 value.setValueConverted(reference.getConvertedValue());
@@ -99,6 +139,19 @@ public class DbApi {
 
         walletValues = (ArrayList<Value>) walletValues.stream()
                 .filter(value -> value.getValueConverted().doubleValue() != 0.0)
+                .filter(value -> {
+                    String currencyCode = value.getCurrency().getIso4217Currency().getCurrencyCode().length() == 4
+                            && (value.getCurrency().getIso4217Currency().getCurrencyCode().startsWith("X")
+                            || value.getCurrency().getIso4217Currency().getCurrencyCode().startsWith("Z"))
+
+                            ? value.getCurrency().getIso4217Currency().getCurrencyCode().substring(1, 4)
+                            : value.getCurrency().getIso4217Currency().getCurrencyCode();
+
+                    if (minimumOrderSize.containsKey(currencyCode)) {
+                        return minimumOrderSize.get(currencyCode) < value.getValue().doubleValue();
+                    }
+                    return false;
+                })
                 .sorted(Comparator.comparing(Value::getValueConverted).thenComparing(Value::getValue).reversed())
                 .collect(Collectors.toList());
         return walletValues;
