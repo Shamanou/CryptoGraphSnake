@@ -5,6 +5,7 @@ import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
@@ -67,7 +68,7 @@ public class DbApi {
         return this.table;
     }
 
-    public ArrayList<Value> getStart()
+    public List<Value> getStart()
             throws NotAvailableFromExchangeException,
             NotYetImplementedForExchangeException,
             ExchangeException,
@@ -77,7 +78,7 @@ public class DbApi {
         Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallets().get(null).getBalances();
 
         Iterator<Currency> keyIt = wallet.keySet().iterator();
-        ArrayList<Value> wv = new ArrayList<>();
+        ArrayList<Value> walletValues = new ArrayList<>();
 
         while (keyIt.hasNext()) {
             Currency key = keyIt.next();
@@ -87,25 +88,20 @@ public class DbApi {
                 value.setCurrency(key);
                 value.setValue(wallet.get(key).getAvailable());
 
-                Reference r = new Reference(this.table);
-                if (!(key.getSymbol().equals(Currency.BTC.getSymbol()))) {
-                    r.setReference(Currency.BTC.getSymbol());
-                    r.setReferenceOf(key.getCurrencyCode());
-                    r.setVolume(wallet.get(key).getAvailable());
-                    try {
-                        value.setValueConverted(r.getConvertedValue());
-                    }catch (IllegalArgumentException ignored){
-                        value.setValueConverted(new BigDecimal("0.0"));
-                    }
-                } else {
-                    value.setValueConverted(wallet.get(key).getAvailable());
-                }
-                wv.add(value);
+                Reference reference = new Reference(this.table);
+                reference.setReference("XXBT");
+                reference.setReferenceOf(key.getIso4217Currency().getSymbol());
+                reference.setVolume(wallet.get(key).getAvailable());
+                value.setValueConverted(reference.getConvertedValue());
+                walletValues.add(value);
             }
         }
 
-        wv.sort(new WalletComparator());
-        return wv;
+        walletValues = (ArrayList<Value>) walletValues.stream()
+                .filter(value -> value.getValueConverted().doubleValue() != 0.0)
+                .sorted(Comparator.comparing(Value::getValueConverted).thenComparing(Value::getValue).reversed())
+                .collect(Collectors.toList());
+        return walletValues;
     }
 
     public void getTickerInformation() throws NotAvailableFromExchangeException,

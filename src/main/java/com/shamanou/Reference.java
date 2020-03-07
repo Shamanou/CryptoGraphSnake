@@ -26,23 +26,25 @@ public class Reference {
     }
 
     public BigDecimal getConvertedValue() {
-        Bson filter = Filters.or(
-                Filters.and(
-                        Filters.regex("tradePair.base", this.reference), Filters.regex("tradePair.quote", this.referenceOf)),
-                Filters.and(
-                        Filters.regex("tradePair.base", this.referenceOf), Filters.regex("tradePair.quote", this.reference)));
-        if (this.table.find(filter, TickerDto.class).into(new ArrayList<>()).size() > 0) {
-            TickerDto result = this.table.find(filter, TickerDto.class).into(new ArrayList<>()).get(0);
-            BigDecimal factor;
-            if (result.getTradePair().getBase().equals(reference)) {
-                factor = BigDecimal.valueOf(result.getTickerBid());
-                return this.volume.multiply(factor);
-            } else if (result.getTradePair().getQuote().equals(reference)) {
-                factor = BigDecimal.valueOf(result.getTickerAsk());
-                return this.volume.divide(factor, RoundingMode.FLOOR);
-            }
+        if (this.reference.equals(this.referenceOf)){
+            return this.volume;
         }
-        return BigDecimal.ZERO;
+        Bson filterBase =
+                Filters.and(Filters.regex("tradePair.base", this.reference), Filters.regex("tradePair.quote", this.referenceOf));
+        Bson filterQuote =
+                Filters.and(Filters.regex("tradePair.base", this.referenceOf), Filters.regex("tradePair.quote", this.reference));
+        BigDecimal factor;
+        if (this.table.find(filterBase, TickerDto.class).into(new ArrayList<>()).size() > 0) {
+            TickerDto result = this.table.find(filterBase, TickerDto.class).into(new ArrayList<>()).get(0);
+            factor = BigDecimal.valueOf(result.getTickerAsk());
+            return this.volume.divide(factor, RoundingMode.FLOOR);
+        } else if (this.table.find(filterQuote, TickerDto.class).into(new ArrayList<>()).size() > 0) {
+            TickerDto result = this.table.find(filterQuote, TickerDto.class).into(new ArrayList<>()).get(0);
+            factor = BigDecimal.valueOf(result.getTickerBid());
+            return this.volume.multiply(factor);
+        } else {
+            return BigDecimal.ZERO;
+        }
     }
 
     public void setVolume(BigDecimal volume) {

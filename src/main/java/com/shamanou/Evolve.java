@@ -13,7 +13,6 @@ import io.jenetics.engine.EvolutionResult;
 import io.jenetics.engine.EvolutionStatistics;
 import io.jenetics.engine.Limits;
 import org.bson.conversions.Bson;
-import org.knowm.xchange.currency.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoCollection;
@@ -33,20 +32,15 @@ public class Evolve {
         Evolve.currentCurrency = Evolve.startCurrency;
         Evolve.startVolume = start.getValue();
         Evolve.table = table;
-        referenceCurrency = (String) Currency.BTC.getCurrencyCodes().toArray()[1];
+        referenceCurrency = "XXBT";
     }
 
     private static double eval(Genotype<AnyGene<TickerDto>> genome) {
         BigDecimal fitConv;
-        BigDecimal referenceVolume = BigDecimal.ZERO;
-
-        if (startCurrency.contains(referenceCurrency)) {
-            Reference r2 = new Reference(Evolve.table);
-            r2.setReferenceOf(startCurrency);
-            r2.setVolume(startVolume);
-            r2.setReference(startCurrency);
-            referenceVolume = r2.getConvertedValue();
-        }
+        Reference volumeReference = new Reference(Evolve.table);
+        volumeReference.setReferenceOf(startCurrency);
+        volumeReference.setVolume(startVolume);
+        volumeReference.setReference(referenceCurrency);
 
         List<TickerDto> genes = genome.stream().flatMap(chromosome -> {
             ArrayList<TickerDto> out = new ArrayList<>();
@@ -72,7 +66,7 @@ public class Evolve {
                 Evolve.currentCurrency  = tickerDto.getTradePair().getQuote();
             } else if (Evolve.currentCurrency.contains(tickerDto.getTradePair().getQuote())) {
                 fit.updateAndGet(fitness -> {
-                    fitness *= tickerDto.getTickerAsk();
+                    fitness /= tickerDto.getTickerAsk();
                     fitness -= fitness * feePercentage;;
                     return fitness;
                 });
@@ -83,10 +77,10 @@ public class Evolve {
 
         Reference reference = new Reference(Evolve.table);
         reference.setReference(referenceCurrency);
-        reference.setReferenceOf(Evolve.startCurrency);
+        reference.setReferenceOf(Evolve.currentCurrency);
         reference.setVolume(BigDecimal.valueOf(fitnessOfGenes.get(2)));
         fitConv = reference.getConvertedValue();
-        return fitConv.subtract(referenceVolume).doubleValue();
+        return fitConv.doubleValue();
     }
 
     private static TickerDto getRandomTicker() {

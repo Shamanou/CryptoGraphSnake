@@ -1,7 +1,7 @@
 package com.shamanou;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 import io.jenetics.AnyGene;
 import io.jenetics.Phenotype;
@@ -34,37 +34,31 @@ public class App {
             }
 
             log.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
-            for (int i = 0; i < 5; i++) {
-                try {
-                    ArrayList<Value> wallet = api.getStart();
+            try {
+                List<Value> wallet = api.getStart();
 
-                    Value start = wallet.get(i);
-                    OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start, key, secret);
+                Value start = wallet.get(0);
+                OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start, key, secret);
 
-                    log.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY nr. " + i + " - " + start.getCurrency().getDisplayName() + "\n			+-----------------------+\n\n");
-                    Evolve e = new Evolve(start, api.getTable());
-                    Phenotype<AnyGene<TickerDto>, Double> result = e.run();
-                    StringBuilder resultString = new StringBuilder();
+                log.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY - " + start.getCurrency().getDisplayName() + "\n			+-----------------------+\n\n");
+                Evolve e = new Evolve(start, api.getTable());
+                Phenotype<AnyGene<TickerDto>, Double> result = e.run();
+                StringBuilder resultString = new StringBuilder();
 
-                    for (AnyGene<TickerDto> tickerAnyGene : result.getGenotype().getChromosome()) {
-                        if(tickerAnyGene.getAllele() != null) {
-                            TickerDto val = tickerAnyGene.getAllele();
-                            resultString.append(val.getTradePair().getBase()).append(val.getTradePair().getQuote()).append("\n");
-                        }
+                for (AnyGene<TickerDto> tickerAnyGene : result.getGenotype().getChromosome()) {
+                    if(tickerAnyGene.getAllele() != null) {
+                        TickerDto val = tickerAnyGene.getAllele();
+                        resultString.append(val.getTradePair().getBase()).append(val.getTradePair().getQuote()).append("\n");
                     }
-
-                    log.info("Results:\n" + resultString + "\n");
-                    if (result.getFitness() > 0.0) {
-                        orderExecutor.setOrder(result);
-                        orderExecutor.executeOrder();
-                    }
-                } catch (IOException | InterruptedException ex) {
-                    log.warn(ex.getMessage());
-                    i = -1;
-                } catch (IndexOutOfBoundsException ex) {
-                    ex.printStackTrace();
-                    throw new IllegalArgumentException(ex);
                 }
+
+                log.info("Results:\n" + resultString + "\n");
+                if (result.getFitness() > 0.0) {
+                    orderExecutor.setOrder(result);
+                    orderExecutor.executeOrder();
+                }
+            } catch (Exception ex) {
+                log.warn(ex.getMessage());
             }
         }
     }

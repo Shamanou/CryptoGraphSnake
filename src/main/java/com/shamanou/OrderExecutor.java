@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoCollection;
 
 public class OrderExecutor {
+    private final MongoCollection<TickerDto> table;
     private Value start;
     private Phenotype<AnyGene<TickerDto>, Double> order;
     private static final Logger log = LoggerFactory.getLogger(OrderExecutor.class);
@@ -33,7 +34,7 @@ public class OrderExecutor {
 
     public OrderExecutor(MongoCollection<TickerDto> table, Value start, String k, String s) {
         this.start = start;
-        this.setTable(table);
+        this.table = table;
 
         ExchangeSpecification exchangeSpecification = new ExchangeSpecification(KrakenExchange.class.getName());
         exchangeSpecification.setApiKey(k);
@@ -58,36 +59,24 @@ public class OrderExecutor {
             TickerDto val = it.next().getAllele();
             MarketOrder order;
             BigDecimal available = accountService.getAccountInfo()
-                    .getWallets().get(null).getBalance(new Currency(inval)).getAvailable().setScale(3, RoundingMode.DOWN);
-            available = available.subtract(available.multiply(new BigDecimal("0.26")));
-
+                    .getWallets().get(null).getBalance(new Currency(inval)).getAvailable();
             if ((val.getTradePair().getQuote()).contains(inval)) {
-                order = new MarketOrder(OrderType.BID, available,
-                        new CurrencyPair(val.getTradePair().getBase().length() == 4
-                                && (val.getTradePair().getBase().startsWith("X")
-                                || val.getTradePair().getBase().startsWith("Z"))
-                                ? val.getTradePair().getBase().substring(1,4)
-                                : val.getTradePair().getBase(),
-                                val.getTradePair().getQuote().length() == 4
-                                        && (val.getTradePair().getQuote().startsWith("X")
-                                        || val.getTradePair().getQuote().startsWith("Z"))
-                                        ? val.getTradePair().getQuote().substring(1,4)
-                                : val.getTradePair().getQuote()));
+
+                Reference reference = new Reference(this.table);
+                reference.setReference(val.getTradePair().getQuote());
+                reference.setReferenceOf(val.getTradePair().getBase());
+                reference.setVolume(available);
+                available = reference.getConvertedValue()
+                        .subtract(available.multiply(new BigDecimal("0.26"))).setScale(3, RoundingMode.DOWN);
+
+                order = getMarketOrder(val, available, OrderType.ASK);
                 inval = val.getTradePair().getBase();
                 executeOrder(val, order);
-            } else if (inval.equals(val.getTradePair().getBase())) {
-                order = new MarketOrder(OrderType.ASK, available,
-                        new CurrencyPair(val.getTradePair().getBase().length() == 4
-                                && (val.getTradePair().getBase().startsWith("X")
-                                || val.getTradePair().getBase().startsWith("Z"))
+            } else if (val.getTradePair().getBase().contains(inval)) {
+                available = available
+                        .subtract(available.multiply(new BigDecimal("0.26"))).setScale(3, RoundingMode.DOWN);
 
-                                ? val.getTradePair().getBase().substring(1,4)
-                                : val.getTradePair().getBase(),
-                                val.getTradePair().getQuote().length() == 4
-                                        && (val.getTradePair().getQuote().startsWith("X")
-                                        || val.getTradePair().getQuote().startsWith("Z"))
-                                        ? val.getTradePair().getQuote().substring(1,4)
-                                        : val.getTradePair().getQuote()));
+                order = getMarketOrder(val, available, OrderType.BID);
                 inval = val.getTradePair().getQuote();
                 executeOrder(val, order);
             }
@@ -100,6 +89,21 @@ public class OrderExecutor {
         }
     }
 
+    private MarketOrder getMarketOrder(TickerDto val, BigDecimal available, OrderType orderType) {
+        return new MarketOrder(orderType, available,
+                new CurrencyPair(val.getTradePair().getBase().length() == 4
+                        && (val.getTradePair().getBase().startsWith("X")
+                        || val.getTradePair().getBase().startsWith("Z"))
+
+                        ? val.getTradePair().getBase().substring(1, 4)
+                        : val.getTradePair().getBase(),
+                        val.getTradePair().getQuote().length() == 4
+                                && (val.getTradePair().getQuote().startsWith("X")
+                                || val.getTradePair().getQuote().startsWith("Z"))
+                                ? val.getTradePair().getQuote().substring(1, 4)
+                                : val.getTradePair().getQuote()));
+    }
+
     private void executeOrder(TickerDto val, MarketOrder order) throws IOException {
         try {
             tradeService.placeKrakenMarketOrder(order);
@@ -107,8 +111,5 @@ public class OrderExecutor {
         } catch (ExchangeException ex) {
             log.warn("Could not execute order (" + order.getType().name()+ " -> " + order.getCurrencyPair().toString() + "): " + ex.getMessage());
         }
-    }
-
-    public void setTable(MongoCollection<TickerDto> table) {
     }
 }
