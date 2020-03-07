@@ -129,7 +129,7 @@ public class DbApi {
                 value.setValue(wallet.get(key).getAvailable());
 
                 Reference reference = new Reference(this.table);
-                reference.setReference("ZEUR");
+                reference.setReference("XXBT");
                 reference.setReferenceOf(key.getIso4217Currency().getSymbol());
                 reference.setVolume(wallet.get(key).getAvailable());
                 value.setValueConverted(reference.getConvertedValue());
@@ -138,19 +138,14 @@ public class DbApi {
         }
 
         walletValues = (ArrayList<Value>) walletValues.stream()
-                .filter(value -> value.getValueConverted().doubleValue() != 0.0)
+                .filter(value -> value.getValueConverted().doubleValue() > 0.0)
                 .filter(value -> {
-                    String currencyCode = value.getCurrency().getIso4217Currency().getCurrencyCode().length() == 4
-                            && (value.getCurrency().getIso4217Currency().getCurrencyCode().startsWith("X")
-                            || value.getCurrency().getIso4217Currency().getCurrencyCode().startsWith("Z"))
-
-                            ? value.getCurrency().getIso4217Currency().getCurrencyCode().substring(1, 4)
-                            : value.getCurrency().getIso4217Currency().getCurrencyCode();
+                    String currencyCode = value.getCurrency().getIso4217Currency().getCurrencyCode();
 
                     if (minimumOrderSize.containsKey(currencyCode)) {
-                        return minimumOrderSize.get(currencyCode) < value.getValue().doubleValue();
+                        return value.getValue().doubleValue() > minimumOrderSize.get(currencyCode);
                     }
-                    return false;
+                    return true;
                 })
                 .sorted(Comparator.comparing(Value::getValueConverted).thenComparing(Value::getValue).reversed())
                 .collect(Collectors.toList());
@@ -165,14 +160,19 @@ public class DbApi {
             try {
                 TickerDto tickerDto = new TickerDto();
                 if (symbol.getWsName() != null) {
-                    Ticker tk = marketDataService.getTicker(new CurrencyPair(symbol.getWsName()));
+                    CurrencyPair pair = new CurrencyPair(symbol.getWsName());
+
+                    Ticker tk = marketDataService.getTicker(pair);
                     BigDecimal ask = tk.getAsk();
                     BigDecimal bid = tk.getBid();
 
                     if (bid != null && ask != null) {
                         tickerDto.setTickerAsk(ask.doubleValue());
                         tickerDto.setTickerBid(bid.doubleValue());
-                        tickerDto.setTradePair(new com.shamanou.TradePair(symbol.getBase(), symbol.getQuote()));
+                        tickerDto.setTradePair(new com.shamanou.TradePair(
+                                symbol.getBase(),
+                                symbol.getQuote()
+                                ));
                         table.insertOne(tickerDto);
                     }
                 }

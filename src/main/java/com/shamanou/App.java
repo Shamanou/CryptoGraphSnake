@@ -34,32 +34,38 @@ public class App {
             }
 
             log.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
-            try {
-                List<Value> wallet = api.getStart();
-
-                Value start = wallet.get(0);
-                OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start, key, secret);
-
-                log.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY - " + start.getCurrency().getDisplayName() + "\n			+-----------------------+\n\n");
-                Evolve e = new Evolve(start, api.getTable());
-                Phenotype<AnyGene<TickerDto>, Double> result = e.run();
-                StringBuilder resultString = new StringBuilder();
-
-                for (AnyGene<TickerDto> tickerAnyGene : result.getGenotype().getChromosome()) {
-                    if(tickerAnyGene.getAllele() != null) {
-                        TickerDto val = tickerAnyGene.getAllele();
-                        resultString.append(val.getTradePair().getBase()).append(val.getTradePair().getQuote()).append("\n");
-                    }
-                }
-
-                log.info("Results:\n" + resultString + "\n");
-                if (result.getFitness() > 0.0) {
-                    orderExecutor.setOrder(result);
-                    orderExecutor.executeOrder();
-                }
-            } catch (Exception ex) {
-                log.warn(ex.getMessage());
+            for (int i = 0; i < 3;i++) {
+                trade(log, api, key, secret, i);
             }
+        }
+    }
+
+    private static void trade(Logger log, DbApi api, String key, String secret, int i) {
+        try {
+            List<Value> wallet = api.getStart();
+
+            Value start = wallet.get(i);
+            OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start, key, secret);
+
+            log.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY - " + start.getCurrency().getDisplayName() + "\n			+-----------------------+\n\n");
+            Evolve e = new Evolve(start, api.getTable());
+            Phenotype<AnyGene<TickerDto>, Double> result = e.run();
+            StringBuilder resultString = new StringBuilder();
+
+            for (AnyGene<TickerDto> tickerAnyGene : result.getGenotype().getChromosome()) {
+                if(tickerAnyGene.getAllele() != null) {
+                    TickerDto val = tickerAnyGene.getAllele();
+                    resultString.append(val.getTradePair().getBase()).append(val.getTradePair().getQuote()).append("\n");
+                }
+            }
+
+            log.info("Results:\n" + resultString + "\n");
+            if (result.getFitness() > 0.0) {
+                orderExecutor.setOrder(result);
+                orderExecutor.executeOrder();
+            }
+        } catch (Exception ex) {
+            log.warn(ex.getMessage());
         }
     }
 }
