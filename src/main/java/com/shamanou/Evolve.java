@@ -32,7 +32,7 @@ public class Evolve {
         Evolve.currentCurrency = Evolve.startCurrency;
         Evolve.startVolume = start.getValue();
         Evolve.table = table;
-        referenceCurrency = "XBT";
+        referenceCurrency = "EUR";
     }
 
     private static double eval(Genotype<AnyGene<TickerDto>> genome) {
@@ -57,20 +57,22 @@ public class Evolve {
         AtomicReference<Double> fit = new AtomicReference<>(startVolume.doubleValue());
         List<Double> fitnessOfGenes = genes.stream().map(tickerDto -> {
             double feePercentage = 0.26;
-            if (Evolve.currentCurrency.contains(tickerDto.getTradePair().getBase())) {
+            if (Evolve.currentCurrency.equals(tickerDto.getTradePair().getBase())) {
                 fit.updateAndGet(fitness -> {
                     fitness *= tickerDto.getTickerBid();
-                    fitness -= fitness * feePercentage;
+                    fitness -= (fitness /100) * feePercentage;
                     return fitness;
                 });
                 Evolve.currentCurrency  = tickerDto.getTradePair().getQuote();
-            } else if (Evolve.currentCurrency.contains(tickerDto.getTradePair().getQuote())) {
+            } else if (Evolve.currentCurrency.equals(tickerDto.getTradePair().getQuote())) {
                 fit.updateAndGet(fitness -> {
                     fitness /= tickerDto.getTickerAsk();
-                    fitness -= fitness * feePercentage;;
+                    fitness -= (fitness /100) * feePercentage;;
                     return fitness;
                 });
                 Evolve.currentCurrency = tickerDto.getTradePair().getBase();
+            } else {
+                return fit.getAndSet(0D);
             }
             return fit.get();
         }).collect(Collectors.toList());

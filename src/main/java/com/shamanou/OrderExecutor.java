@@ -27,7 +27,6 @@ import com.mongodb.client.MongoCollection;
 
 public class OrderExecutor {
     private final MongoCollection<TickerDto> table;
-    private final List<CurrencyPair> symbols;
     private Value start;
     private Phenotype<AnyGene<TickerDto>, Double> order;
     private static final Logger log = LoggerFactory.getLogger(OrderExecutor.class);
@@ -44,7 +43,6 @@ public class OrderExecutor {
         Exchange exchange = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
         exchange.applySpecification(exchangeSpecification);
         tradeService = (KrakenTradeService)exchange.getTradeService();
-        symbols = ((KrakenExchange) exchange).getExchangeSymbols();
         accountService = exchange.getAccountService();
     }
 

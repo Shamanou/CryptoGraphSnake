@@ -127,7 +127,7 @@ public class DbApi {
                 value.setValue(wallet.get(key).getAvailable());
 
                 Reference reference = new Reference(this.table);
-                reference.setReference("XBT");
+                reference.setReference("EUR");
                 reference.setReferenceOf(key.getIso4217Currency().getCurrencyCode());
                 reference.setVolume(wallet.get(key).getAvailable());
                 value.setValueConverted(reference.getConvertedValue());
