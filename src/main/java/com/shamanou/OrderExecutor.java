@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Iterator;
+import java.util.List;
 
 import io.jenetics.AnyGene;
 import io.jenetics.Chromosome;
@@ -26,6 +27,7 @@ import com.mongodb.client.MongoCollection;
 
 public class OrderExecutor {
     private final MongoCollection<TickerDto> table;
+    private final List<CurrencyPair> symbols;
     private Value start;
     private Phenotype<AnyGene<TickerDto>, Double> order;
     private static final Logger log = LoggerFactory.getLogger(OrderExecutor.class);
@@ -42,6 +44,7 @@ public class OrderExecutor {
         Exchange exchange = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
         exchange.applySpecification(exchangeSpecification);
         tradeService = (KrakenTradeService)exchange.getTradeService();
+        symbols = ((KrakenExchange) exchange).getExchangeSymbols();
         accountService = exchange.getAccountService();
     }
 
@@ -60,42 +63,50 @@ public class OrderExecutor {
             KrakenStandardOrder order;
             BigDecimal available = accountService.getAccountInfo()
                     .getWallets().get(null).getBalance(new Currency(inval)).getAvailable();
-            if ((val.getTradePair().getQuote()).contains(inval)) {
+
+            String base = val.getTradePair().getBase().length() == 4
+                    && (val.getTradePair().getBase().startsWith("X")
+                    || val.getTradePair().getBase().startsWith("Z")) ? val.getTradePair().getBase().substring(1) : val.getTradePair().getBase();
+            String quote = val.getTradePair().getQuote().length() == 4
+                    && (val.getTradePair().getQuote().startsWith("X")
+                    || val.getTradePair().getQuote().startsWith("Z")) ?  val.getTradePair().getQuote().substring(1) : val.getTradePair().getQuote();
+
+
+            if (quote.equals(inval)) {
 
                 Reference reference = new Reference(this.table);
-                reference.setReference(val.getTradePair().getQuote());
-                reference.setReferenceOf(val.getTradePair().getBase());
+                reference.setReference(quote);
+                reference.setReferenceOf(base);
                 reference.setVolume(available);
                 available = reference.getConvertedValue()
-                        .subtract(available.multiply(new BigDecimal("0.26"))).setScale(3, RoundingMode.DOWN);
+                        .subtract(available.divide(new BigDecimal("100"), RoundingMode.FLOOR).multiply(new BigDecimal("0.26")));
 
-                order = getMarketOrder(val, available, KrakenType.BUY);
-                inval = val.getTradePair().getBase();
+                order = getMarketOrder(available, KrakenType.BUY, new CurrencyPair(base + "/" + quote));
+                inval = base;
                 executeOrder(val, order);
-            } else if (val.getTradePair().getBase().contains(inval)) {
+            } else if (base.equals(inval)) {
                 available = available
-                        .subtract(available.multiply(new BigDecimal("0.26"))).setScale(3, RoundingMode.DOWN);
+                        .subtract(available.divide(new BigDecimal("100"), RoundingMode.FLOOR)).multiply(new BigDecimal("0.26")));
 
-                order = getMarketOrder(val, available, KrakenType.SELL);
-                inval = val.getTradePair().getQuote();
+                order = getMarketOrder(available, KrakenType.SELL, new CurrencyPair(base + "/" + quote));
+                inval = quote;
+                if (sleep()) break;
                 executeOrder(val, order);
-            }
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                log.warn(e.getMessage());
-                break;
             }
         }
     }
 
-    private KrakenStandardOrder getMarketOrder(TickerDto val, BigDecimal available, KrakenType type) {
-        CurrencyPair currencyPair = new CurrencyPair(val.getTradePair().getBase()
-                .replaceAll("^Z", "")
-                .replaceAll("^X", "")
-                , val.getTradePair().getQuote()
-                .replaceAll("^Z", "")
-                .replaceAll("^X", ""));
+    private boolean sleep() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            log.warn(e.getMessage());
+            return true;
+        }
+        return false;
+    }
+
+    private KrakenStandardOrder getMarketOrder(BigDecimal available, KrakenType type, CurrencyPair currencyPair) {
         return KrakenStandardOrder.getMarketOrderBuilder(currencyPair, type,available).buildOrder();
     }
 

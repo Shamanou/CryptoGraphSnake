@@ -37,10 +37,9 @@ import si.mazi.rescu.HttpStatusIOException;
 public class DbApi {
     private MongoCollection<TickerDto> table;
     private static final Logger log = LoggerFactory.getLogger(DbApi.class);
-    private MarketDataService marketDataService;
-    private Collection<KrakenAssetPair> symbols;
+    private KrakenMarketDataService marketDataService;
+    private Map<String, KrakenAssetPair> symbols;
     private AccountService accountService;
-    private KrakenAssetPairs pairs;
     private Map<String, Float> minimumOrderSize = new HashMap<>();
 
     public DbApi(String key, String secret) throws IOException {
@@ -98,9 +97,8 @@ public class DbApi {
         exchangeSpecification.setSecretKey(secret);
         Exchange exchange = ExchangeFactory.INSTANCE.createExchange(KrakenExchange.class.getName());
         exchange.applySpecification(exchangeSpecification);
-        marketDataService = exchange.getMarketDataService();
-        pairs = ((KrakenMarketDataService) exchange.getMarketDataService()).getKrakenAssetPairs();
-        symbols = pairs.getAssetPairMap().values();
+        marketDataService = (KrakenMarketDataService) exchange.getMarketDataService();
+        symbols = marketDataService.getKrakenAssetPairs().getAssetPairMap();
         accountService = exchange.getAccountService();
     }
 
@@ -129,8 +127,8 @@ public class DbApi {
                 value.setValue(wallet.get(key).getAvailable());
 
                 Reference reference = new Reference(this.table);
-                reference.setReference("XXBT");
-                reference.setReferenceOf(key.getIso4217Currency().getSymbol());
+                reference.setReference("XBT");
+                reference.setReferenceOf(key.getIso4217Currency().getCurrencyCode());
                 reference.setVolume(wallet.get(key).getAvailable());
                 value.setValueConverted(reference.getConvertedValue());
                 walletValues.add(value);
@@ -140,7 +138,10 @@ public class DbApi {
         walletValues = (ArrayList<Value>) walletValues.stream()
                 .filter(value -> value.getValueConverted().doubleValue() > 0.0)
                 .filter(value -> {
-                    String currencyCode = value.getCurrency().getIso4217Currency().getCurrencyCode();
+                    String currencyCode = value.getCurrency().getCurrencyCode().length() == 4
+                            && (value.getCurrency().getCurrencyCode().startsWith("X")
+                            || value.getCurrency().getCurrencyCode().startsWith("Z"))
+                            ? value.getCurrency().getCurrencyCode().substring(1) : value.getCurrency().getCurrencyCode();
 
                     if (minimumOrderSize.containsKey(currencyCode)) {
                         return value.getValue().doubleValue() > minimumOrderSize.get(currencyCode);
@@ -156,25 +157,27 @@ public class DbApi {
             NotYetImplementedForExchangeException,
             ExchangeException,
             IOException {
-        for (KrakenAssetPair symbol : symbols) {
+        for (KrakenAssetPair symbol : symbols.values()) {
             try {
                 TickerDto tickerDto = new TickerDto();
-                if (symbol.getWsName() != null) {
-                    CurrencyPair pair = new CurrencyPair(symbol.getWsName());
+                String base = symbol.getBase().length() == 4
+                        && (symbol.getBase().startsWith("X") || symbol.getBase().startsWith("Z")) ? symbol.getBase().substring(1) : symbol.getBase();
+                String quote = symbol.getQuote().length() == 4
+                        && (symbol.getQuote().startsWith("X") || symbol.getQuote().startsWith("Z")) ?  symbol.getQuote().substring(1) : symbol.getQuote();
 
-                    Ticker tk = marketDataService.getTicker(pair);
-                    BigDecimal ask = tk.getAsk();
-                    BigDecimal bid = tk.getBid();
+                CurrencyPair pair = new CurrencyPair(base + "/" + quote);
+                Ticker tk = marketDataService.getTicker(pair);
+                BigDecimal ask = tk.getAsk();
+                BigDecimal bid = tk.getBid();
 
-                    if (bid != null && ask != null) {
-                        tickerDto.setTickerAsk(ask.doubleValue());
-                        tickerDto.setTickerBid(bid.doubleValue());
-                        tickerDto.setTradePair(new com.shamanou.TradePair(
-                                symbol.getBase(),
-                                symbol.getQuote()
-                                ));
-                        table.insertOne(tickerDto);
-                    }
+                if (bid != null && ask != null) {
+                    tickerDto.setTickerAsk(ask.doubleValue());
+                    tickerDto.setTickerBid(bid.doubleValue());
+                    tickerDto.setTradePair(new com.shamanou.TradePair(
+                            base,
+                            quote
+                            ));
+                    table.insertOne(tickerDto);
                 }
             } catch (HttpStatusIOException | ExchangeException ex) {
                 log.warn(symbol.getBase() + symbol.getQuote() + " exited with " + ex.getMessage());

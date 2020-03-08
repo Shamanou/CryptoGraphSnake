@@ -30,9 +30,9 @@ public class Reference {
             return this.volume;
         }
         Bson filterBase =
-                Filters.and(Filters.regex("tradePair.base", this.reference), Filters.regex("tradePair.quote", this.referenceOf));
+                Filters.and(Filters.eq("tradePair.base", this.reference), Filters.eq("tradePair.quote", this.referenceOf));
         Bson filterQuote =
-                Filters.and(Filters.regex("tradePair.base", this.referenceOf), Filters.regex("tradePair.quote", this.reference));
+                Filters.and(Filters.eq("tradePair.base", this.referenceOf), Filters.eq("tradePair.quote", this.reference));
         BigDecimal factor;
         if (this.table.find(filterBase, TickerDto.class).into(new ArrayList<>()).size() > 0) {
             TickerDto result = this.table.find(filterBase, TickerDto.class).into(new ArrayList<>()).get(0);
