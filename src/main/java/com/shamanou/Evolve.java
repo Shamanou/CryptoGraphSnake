@@ -60,14 +60,14 @@ public class Evolve {
             if (Evolve.currentCurrency.equals(tickerDto.getTradePair().getBase())) {
                 fit.updateAndGet(fitness -> {
                     fitness *= tickerDto.getTickerBid();
-                    fitness -= (fitness /100) * feePercentage;
+                    fitness -= fitness * feePercentage;
                     return fitness;
                 });
                 Evolve.currentCurrency  = tickerDto.getTradePair().getQuote();
             } else if (Evolve.currentCurrency.equals(tickerDto.getTradePair().getQuote())) {
                 fit.updateAndGet(fitness -> {
                     fitness /= tickerDto.getTickerAsk();
-                    fitness -= (fitness /100) * feePercentage;;
+                    fitness -= fitness * feePercentage;;
                     return fitness;
                 });
                 Evolve.currentCurrency = tickerDto.getTradePair().getBase();
@@ -81,7 +81,7 @@ public class Evolve {
         reference.setReference(referenceCurrency);
         reference.setReferenceOf(Evolve.currentCurrency);
         reference.setVolume(BigDecimal.valueOf(fitnessOfGenes.get(2)));
-        fitConv = reference.getConvertedValue();
+        fitConv = volumeReference.getConvertedValue().subtract(reference.getConvertedValue());
         return fitConv.doubleValue();
     }
 
