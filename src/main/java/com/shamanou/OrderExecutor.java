@@ -78,27 +78,26 @@ public class OrderExecutor {
                 reference.setReference(quote);
                 reference.setReferenceOf(base);
                 reference.setVolume(available);
-                available = reference.getConvertedValue()
-                        .subtract(available.divide(new BigDecimal("100"), RoundingMode.FLOOR).multiply(new BigDecimal("0.26")));
+                available = reference.getConvertedValue().subtract(available.divide(new BigDecimal("100")).multiply(new BigDecimal("0.26")));
 
                 order = getMarketOrder(available, KrakenType.BUY, new CurrencyPair(base + "/" + quote));
                 inval = base;
                 executeOrder(val, order);
             } else if (base.equals(inval)) {
-                available = available
-                        .subtract(available.divide(new BigDecimal("100"), RoundingMode.FLOOR)).multiply(new BigDecimal("0.26")));
+                available = available.subtract(available.divide(new BigDecimal("100")).multiply(new BigDecimal("0.26")));
 
                 order = getMarketOrder(available, KrakenType.SELL, new CurrencyPair(base + "/" + quote));
                 inval = quote;
                 if (sleep()) break;
                 executeOrder(val, order);
+                if (sleep()) break;
             }
         }
     }
 
     private boolean sleep() {
         try {
-            Thread.sleep(5000);
+            Thread.sleep(6000);
         } catch (InterruptedException e) {
             log.warn(e.getMessage());
             return true;
