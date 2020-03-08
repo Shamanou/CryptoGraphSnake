@@ -32,7 +32,7 @@ public class Evolve {
         Evolve.currentCurrency = Evolve.startCurrency;
         Evolve.startVolume = start.getValue();
         Evolve.table = table;
-        referenceCurrency = "EUR";
+        referenceCurrency = "XBT";
     }
 
     private static double eval(Genotype<AnyGene<TickerDto>> genome) {

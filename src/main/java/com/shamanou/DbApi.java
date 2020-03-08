@@ -21,11 +21,8 @@ import org.knowm.xchange.exceptions.NotAvailableFromExchangeException;
 import org.knowm.xchange.exceptions.NotYetImplementedForExchangeException;
 import org.knowm.xchange.kraken.KrakenExchange;
 import org.knowm.xchange.kraken.dto.marketdata.KrakenAssetPair;
-import org.knowm.xchange.kraken.dto.marketdata.KrakenAssetPairs;
 import org.knowm.xchange.kraken.service.KrakenMarketDataService;
-import org.knowm.xchange.kraken.service.KrakenTradeService;
 import org.knowm.xchange.service.account.AccountService;
-import org.knowm.xchange.service.marketdata.MarketDataService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.MongoClient;
@@ -82,7 +79,7 @@ public class DbApi {
         CodecRegistry pojoCodecRegistry = fromRegistries(
                 fromProviders(PojoCodecProvider.builder().register(TickerDto.class, TradePair.class).build()),
                 MongoClient.getDefaultCodecRegistry());
-        MongoClient mongo = new MongoClient("localhost", MongoClientOptions.builder().codecRegistry(pojoCodecRegistry).build());
+        MongoClient mongo = new MongoClient("mongo:27017", MongoClientOptions.builder().codecRegistry(pojoCodecRegistry).build());
         MongoDatabase db = mongo.getDatabase("trade");
         this.table = db.getCollection("trade", TickerDto.class);
         try {
@@ -127,7 +124,7 @@ public class DbApi {
                 value.setValue(wallet.get(key).getAvailable());
 
                 Reference reference = new Reference(this.table);
-                reference.setReference("EUR");
+                reference.setReference("XBT");
                 reference.setReferenceOf(key.getIso4217Currency().getCurrencyCode());
                 reference.setVolume(wallet.get(key).getAvailable());
                 value.setValueConverted(reference.getConvertedValue());
@@ -136,7 +133,6 @@ public class DbApi {
         }
 
         walletValues = (ArrayList<Value>) walletValues.stream()
-                .filter(value -> value.getValueConverted().doubleValue() > 0.0)
                 .filter(value -> {
                     String currencyCode = value.getCurrency().getCurrencyCode().length() == 4
                             && (value.getCurrency().getCurrencyCode().startsWith("X")

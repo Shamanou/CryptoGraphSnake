@@ -5,7 +5,6 @@ import java.util.List;
 
 import io.jenetics.AnyGene;
 import io.jenetics.Phenotype;
-import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +19,7 @@ public class App {
         String secret = args[1];
         try {
             api = new DbApi(key, secret);
-        } catch (JSONException | IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -29,8 +28,8 @@ public class App {
             try {
                 assert api != null;
                 api.getTickerInformation();
-            } catch (JSONException | IOException e1) {
-                e1.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             log.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
