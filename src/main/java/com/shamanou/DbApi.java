@@ -125,7 +125,11 @@ public class DbApi {
 
                 Reference reference = new Reference(this.table);
                 reference.setReference("XBT");
-                reference.setReferenceOf(key.getIso4217Currency().getCurrencyCode());
+                String currencyCode = value.getCurrency().getCurrencyCode().length() == 4
+                        && (value.getCurrency().getCurrencyCode().startsWith("X")
+                        || value.getCurrency().getCurrencyCode().startsWith("Z"))
+                        ? value.getCurrency().getCurrencyCode().substring(1) : value.getCurrency().getCurrencyCode();
+                reference.setReferenceOf(currencyCode);
                 reference.setVolume(wallet.get(key).getAvailable());
                 value.setValueConverted(reference.getConvertedValue());
                 walletValues.add(value);
@@ -144,7 +148,7 @@ public class DbApi {
                     }
                     return true;
                 })
-                .sorted(Comparator.comparing(Value::getValueConverted).thenComparing(Value::getValue).reversed())
+                .sorted(Comparator.comparing(Value::getValueConverted).reversed())
                 .collect(Collectors.toList());
         return walletValues;
     }

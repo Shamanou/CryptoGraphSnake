@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Iterator;
-import java.util.List;
 
 import io.jenetics.AnyGene;
 import io.jenetics.Chromosome;
@@ -71,20 +70,20 @@ public class OrderExecutor {
 
 
             if (quote.equals(inval)) {
-
                 Reference reference = new Reference(this.table);
-                reference.setReference(quote);
-                reference.setReferenceOf(base);
+                reference.setReference(base);
+                reference.setReferenceOf(quote);
                 reference.setVolume(available);
-                available = reference.getConvertedValue().subtract(available.multiply(new BigDecimal("0.26")));
 
-                order = getMarketOrder(available, KrakenType.BUY, new CurrencyPair(base + "/" + quote));
+                BigDecimal fee = reference.getConvertedValue().multiply(new BigDecimal("0.26")).setScale(3, RoundingMode.DOWN);
+
+                order = getMarketOrder(reference.getConvertedValue().subtract(fee), KrakenType.BUY, new CurrencyPair(base + "/" + quote));
                 inval = base;
                 executeOrder(val, order);
             } else if (base.equals(inval)) {
-                available = available.subtract(available.multiply(new BigDecimal("0.26")));
+                BigDecimal fee = available.divide(new BigDecimal("100"), RoundingMode.DOWN).multiply(new BigDecimal("0.26")).setScale(3, RoundingMode.DOWN);
 
-                order = getMarketOrder(available, KrakenType.SELL, new CurrencyPair(base + "/" + quote));
+                order = getMarketOrder(available.subtract(fee), KrakenType.SELL, new CurrencyPair(base + "/" + quote));
                 inval = quote;
                 if (sleep()) break;
                 executeOrder(val, order);

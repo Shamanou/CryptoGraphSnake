@@ -34,7 +34,11 @@ public class App {
 
             log.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
             for (int i = 0; i < 2;i++) {
-                trade(log, api, key, secret, i);
+                try {
+                    trade(log, api, key, secret, i);
+                }catch(Exception ex){
+                    ex.printStackTrace();
+                }
             }
         }
     }
