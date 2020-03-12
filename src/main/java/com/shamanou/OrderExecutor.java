@@ -75,7 +75,7 @@ public class OrderExecutor {
                 reference.setReferenceOf(quote);
                 reference.setVolume(available);
 
-                BigDecimal fee = reference.getConvertedValue().multiply(new BigDecimal("0.26")).setScale(3, RoundingMode.DOWN);
+                BigDecimal fee = reference.getConvertedValue().divide(new BigDecimal("100"), RoundingMode.DOWN).multiply(new BigDecimal("0.26")).setScale(3, RoundingMode.DOWN);
 
                 order = getMarketOrder(reference.getConvertedValue().subtract(fee), KrakenType.BUY, new CurrencyPair(base + "/" + quote));
                 inval = base;
@@ -87,7 +87,6 @@ public class OrderExecutor {
                 inval = quote;
                 if (sleep()) break;
                 executeOrder(val, order);
-                if (sleep()) break;
             }
         }
     }
