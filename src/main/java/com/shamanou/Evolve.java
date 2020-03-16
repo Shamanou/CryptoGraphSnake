@@ -59,15 +59,15 @@ public class Evolve {
             double feePercentage = 0.26;
             if (Evolve.currentCurrency.equals(tickerDto.getTradePair().getBase())) {
                 fit.updateAndGet(fitness -> {
-                    fitness *= tickerDto.getTickerBid();
-                    fitness -= fitness * feePercentage;
+                    fitness /= tickerDto.getTickerBid();
+                    fitness -= (fitness / 100)  * feePercentage;
                     return fitness;
                 });
                 Evolve.currentCurrency  = tickerDto.getTradePair().getQuote();
             } else if (Evolve.currentCurrency.equals(tickerDto.getTradePair().getQuote())) {
                 fit.updateAndGet(fitness -> {
-                    fitness /= tickerDto.getTickerAsk();
-                    fitness -= fitness * feePercentage;;
+                    fitness *= tickerDto.getTickerAsk();
+                    fitness -= (fitness/ 100) * feePercentage;;
                     return fitness;
                 });
                 Evolve.currentCurrency = tickerDto.getTradePair().getBase();
@@ -80,13 +80,12 @@ public class Evolve {
         Reference reference = new Reference(Evolve.table);
         reference.setReference(referenceCurrency);
         reference.setReferenceOf(Evolve.currentCurrency);
-        reference.setVolume(BigDecimal.valueOf(fitnessOfGenes.get(2)));
-        fitConv = volumeReference.getConvertedValue().subtract(reference.getConvertedValue());
-        return fitConv.doubleValue();
+        reference.setVolume(BigDecimal.valueOf(fitnessOfGenes.get(fitnessOfGenes.size()-1)));
+        return volumeReference.getConvertedValue().doubleValue() - reference.getConvertedValue().doubleValue();
     }
 
     private static TickerDto getRandomTicker() {
-        if (N == 3) {
+        if (N == 2) {
             N = 0;
             Evolve.currentCurrency = Evolve.startCurrency;
         }
@@ -109,7 +108,7 @@ public class Evolve {
     final Consumer<? super EvolutionResult<AnyGene<TickerDto>, Double>> statistics = EvolutionStatistics.ofNumber();
 
     public Phenotype<AnyGene<TickerDto>, Double> run() {
-        AnyChromosome<TickerDto> chromosome = AnyChromosome.of(Evolve::getRandomTicker, 3);
+        AnyChromosome<TickerDto> chromosome = AnyChromosome.of(Evolve::getRandomTicker, 2);
 
         final Engine<AnyGene<TickerDto>, Double> engine = Engine
                 .builder(Evolve::eval, chromosome)

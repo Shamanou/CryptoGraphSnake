@@ -93,7 +93,7 @@ public class OrderExecutor {
 
     private boolean sleep() {
         try {
-            Thread.sleep(6000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             log.warn(e.getMessage());
             return true;
