@@ -109,7 +109,7 @@ public class DbApi {
             ExchangeException,
             IOException,
             InterruptedException {
-        Thread.sleep(5000);
+        Thread.sleep(500);
         Map<Currency, Balance> wallet = accountService.getAccountInfo().getWallets().get(null).getBalances();
 
         Iterator<Currency> keyIt = wallet.keySet().iterator();
@@ -124,7 +124,7 @@ public class DbApi {
                 value.setValue(wallet.get(key).getAvailable());
 
                 Reference reference = new Reference(this.table);
-                reference.setReference("XBT");
+                reference.setReference("EUR");
                 String currencyCode = value.getCurrency().getCurrencyCode().length() == 4
                         && (value.getCurrency().getCurrencyCode().startsWith("X")
                         || value.getCurrency().getCurrencyCode().startsWith("Z"))

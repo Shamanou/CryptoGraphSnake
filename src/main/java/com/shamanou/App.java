@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 
 
 public class App {
+    final static Logger log = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) {
-        final Logger log = LoggerFactory.getLogger(App.class);
         DbApi api = null;
 
         String key = args[0];
@@ -33,9 +33,9 @@ public class App {
             }
 
             log.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
-            for (int i = 0; i < 2;i++) {
+            for (int i = 0; i < 4;i++) {
                 try {
-                    trade(log, api, key, secret, i);
+                    trade(api, key, secret, i);
                 }catch(Exception ex){
                     ex.printStackTrace();
                 }
@@ -43,7 +43,7 @@ public class App {
         }
     }
 
-    private static void trade(Logger log, DbApi api, String key, String secret, int i) {
+    private static void trade(DbApi api, String key, String secret, int i) {
         List<Value> wallet = null;
         try {
             wallet = api.getStart();

@@ -26,17 +26,17 @@ public class Evolve {
     private static final Logger LOG = LoggerFactory.getLogger(Evolve.class);
     private static String referenceCurrency;
 
-    public Evolve(Value start, MongoCollection<TickerDto> table) {
+    public Evolve(Value start,
+                  MongoCollection<TickerDto> table) {
         final Object[] currencyCodes = start.getCurrency().getCurrencyCodes().toArray();
         Evolve.startCurrency = (String)currencyCodes[currencyCodes.length-1];
         Evolve.currentCurrency = Evolve.startCurrency;
         Evolve.startVolume = start.getValue();
         Evolve.table = table;
-        referenceCurrency = "XBT";
+        referenceCurrency = "EUR";
     }
 
     private static double eval(Genotype<AnyGene<TickerDto>> genome) {
-        BigDecimal fitConv;
         Reference volumeReference = new Reference(Evolve.table);
         volumeReference.setReferenceOf(startCurrency);
         volumeReference.setVolume(startVolume);
@@ -85,15 +85,15 @@ public class Evolve {
     }
 
     private static TickerDto getRandomTicker() {
-        if (N == 2) {
+        if (N == 3) {
             N = 0;
             Evolve.currentCurrency = Evolve.startCurrency;
         }
 
         Random randomGenerator = new Random();
         Bson filter = Filters.or(
-                Filters.regex("tradePair.base", Evolve.currentCurrency),
-                Filters.regex("tradePair.quote", Evolve.currentCurrency));
+                Filters.eq("tradePair.base", Evolve.currentCurrency),
+                Filters.eq("tradePair.quote", Evolve.currentCurrency));
         ArrayList<TickerDto> result = table.find(TickerDto.class).filter(filter).into(new ArrayList<>());
         TickerDto t = result.get(randomGenerator.nextInt(result.size()));
         if (t.getTradePair().getQuote().equals(Evolve.currentCurrency)) {
@@ -108,7 +108,7 @@ public class Evolve {
     final Consumer<? super EvolutionResult<AnyGene<TickerDto>, Double>> statistics = EvolutionStatistics.ofNumber();
 
     public Phenotype<AnyGene<TickerDto>, Double> run() {
-        AnyChromosome<TickerDto> chromosome = AnyChromosome.of(Evolve::getRandomTicker, 2);
+        AnyChromosome<TickerDto> chromosome = AnyChromosome.of(Evolve::getRandomTicker, 3);
 
         final Engine<AnyGene<TickerDto>, Double> engine = Engine
                 .builder(Evolve::eval, chromosome)
