@@ -1,12 +1,20 @@
-package com.shamanou;
+package com.shamanou.service;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.mongodb.client.model.Filters;
+import com.shamanou.config.Configuration;
+import com.shamanou.domain.Reference;
+import com.shamanou.domain.TickerDto;
+import com.shamanou.domain.Value;
 import io.jenetics.*;
 import io.jenetics.engine.Engine;
 import io.jenetics.engine.EvolutionResult;
@@ -17,30 +25,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoCollection;
 
-public class Evolve {
+public class EvolveService {
     private static BigDecimal startVolume;
     private static String startCurrency;
     private static String currentCurrency;
     private static MongoCollection<TickerDto> table;
     private static int N = 0;
-    private static final Logger LOG = LoggerFactory.getLogger(Evolve.class);
-    private static String referenceCurrency;
+    private static final Logger LOG = LoggerFactory.getLogger(EvolveService.class);
+    private static Configuration CONFIGURATION = null;
 
-    public Evolve(Value start,
-                  MongoCollection<TickerDto> table) {
+    public EvolveService(Value start, MongoCollection<TickerDto> table) throws IOException {
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        mapper.findAndRegisterModules();
+        CONFIGURATION = mapper.readValue(new File("src/main/resources/config.yml"), Configuration.class);
+
         final Object[] currencyCodes = start.getCurrency().getCurrencyCodes().toArray();
-        Evolve.startCurrency = (String)currencyCodes[currencyCodes.length-1];
-        Evolve.currentCurrency = Evolve.startCurrency;
-        Evolve.startVolume = start.getValue();
-        Evolve.table = table;
-        referenceCurrency = "EUR";
+        EvolveService.startCurrency = (String)currencyCodes[currencyCodes.length-1];
+        EvolveService.currentCurrency = EvolveService.startCurrency;
+        EvolveService.startVolume = start.getValue();
+        EvolveService.table = table;
     }
 
     private static double eval(Genotype<AnyGene<TickerDto>> genome) {
-        Reference volumeReference = new Reference(Evolve.table);
+        Reference volumeReference = new Reference(EvolveService.table);
         volumeReference.setReferenceOf(startCurrency);
         volumeReference.setVolume(startVolume);
-        volumeReference.setReference(referenceCurrency);
+        volumeReference.setReference(CONFIGURATION.getReferenceCurrency());
 
         List<TickerDto> genes = genome.stream().flatMap(chromosome -> {
             ArrayList<TickerDto> out = new ArrayList<>();
@@ -57,66 +67,75 @@ public class Evolve {
         AtomicReference<Double> fit = new AtomicReference<>(startVolume.doubleValue());
         List<Double> fitnessOfGenes = genes.stream().map(tickerDto -> {
             double feePercentage = 0.26;
-            if (Evolve.currentCurrency.equals(tickerDto.getTradePair().getBase())) {
+            if (EvolveService.currentCurrency.equals(tickerDto.getTradePair().getBase())) {
                 fit.updateAndGet(fitness -> {
                     fitness /= tickerDto.getTickerBid();
                     fitness -= (fitness / 100)  * feePercentage;
-                    return fitness;
+                    return returnFitnessIfValid(fitness);
                 });
-                Evolve.currentCurrency  = tickerDto.getTradePair().getQuote();
-            } else if (Evolve.currentCurrency.equals(tickerDto.getTradePair().getQuote())) {
+                EvolveService.currentCurrency  = tickerDto.getTradePair().getQuote();
+            } else if (EvolveService.currentCurrency.equals(tickerDto.getTradePair().getQuote())) {
                 fit.updateAndGet(fitness -> {
                     fitness *= tickerDto.getTickerAsk();
                     fitness -= (fitness/ 100) * feePercentage;;
-                    return fitness;
+                    return returnFitnessIfValid(fitness);
                 });
-                Evolve.currentCurrency = tickerDto.getTradePair().getBase();
+                EvolveService.currentCurrency = tickerDto.getTradePair().getBase();
             } else {
                 return fit.getAndSet(0D);
             }
             return fit.get();
         }).collect(Collectors.toList());
 
-        Reference reference = new Reference(Evolve.table);
-        reference.setReference(referenceCurrency);
-        reference.setReferenceOf(Evolve.currentCurrency);
+        Reference reference = new Reference(EvolveService.table);
+        reference.setReference(CONFIGURATION.getReferenceCurrency());
+        reference.setReferenceOf(EvolveService.currentCurrency);
         reference.setVolume(BigDecimal.valueOf(fitnessOfGenes.get(fitnessOfGenes.size()-1)));
         return volumeReference.getConvertedValue().doubleValue() - reference.getConvertedValue().doubleValue();
+    }
+
+    private static Double returnFitnessIfValid(Double fitness) {
+        if (!CONFIGURATION.getCurrencyLimits().containsKey(EvolveService.currentCurrency)){
+            return fitness;
+        } else if (CONFIGURATION.getCurrencyLimits().get(EvolveService.currentCurrency).getMinimumOrderSize() > fitness ) {
+            return fitness;
+        } else {
+            return 0D;
+        }
     }
 
     private static TickerDto getRandomTicker() {
         if (N == 3) {
             N = 0;
-            Evolve.currentCurrency = Evolve.startCurrency;
+            EvolveService.currentCurrency = EvolveService.startCurrency;
         }
 
         Random randomGenerator = new Random();
         Bson filter = Filters.or(
-                Filters.eq("tradePair.base", Evolve.currentCurrency),
-                Filters.eq("tradePair.quote", Evolve.currentCurrency));
+                Filters.eq("tradePair.base", EvolveService.currentCurrency),
+                Filters.eq("tradePair.quote", EvolveService.currentCurrency));
         ArrayList<TickerDto> result = table.find(TickerDto.class).filter(filter).into(new ArrayList<>());
+
         TickerDto t = result.get(randomGenerator.nextInt(result.size()));
-        if (t.getTradePair().getQuote().equals(Evolve.currentCurrency)) {
-            Evolve.currentCurrency = t.getTradePair().getBase();
-        } else if (t.getTradePair().getBase().equals(Evolve.currentCurrency)) {
-            Evolve.currentCurrency = t.getTradePair().getQuote();
+        if (t.getTradePair().getQuote().equals(EvolveService.currentCurrency)) {
+            EvolveService.currentCurrency = t.getTradePair().getBase();
+        } else if (t.getTradePair().getBase().equals(EvolveService.currentCurrency)) {
+            EvolveService.currentCurrency = t.getTradePair().getQuote();
         }
-        Evolve.N++;
+        EvolveService.N++;
         return t;
     }
 
     final Consumer<? super EvolutionResult<AnyGene<TickerDto>, Double>> statistics = EvolutionStatistics.ofNumber();
 
     public Phenotype<AnyGene<TickerDto>, Double> run() {
-        AnyChromosome<TickerDto> chromosome = AnyChromosome.of(Evolve::getRandomTicker, 3);
+        AnyChromosome<TickerDto> chromosome = AnyChromosome.of(EvolveService::getRandomTicker, CONFIGURATION.getGenomeSize());
 
         final Engine<AnyGene<TickerDto>, Double> engine = Engine
-                .builder(Evolve::eval, chromosome)
-                .populationSize(500)
+                .builder(EvolveService::eval, chromosome)
+                .populationSize(1000)
                 .optimize(Optimize.MAXIMUM)
                 .survivorsSelector(new TournamentSelector<>(10))
-                .offspringSelector(new RouletteWheelSelector<>())
-                .alterers(new SinglePointCrossover<>(0.05))
                 .build();
 
         Phenotype<AnyGene<TickerDto>, Double> result = engine.stream()

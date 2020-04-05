@@ -1,4 +1,4 @@
-package com.shamanou;
+package com.shamanou.domain;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

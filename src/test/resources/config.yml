@@ -1,0 +1,21 @@
+databaseHost: 'localhost'
+genomeSize: 3
+
+referenceCurrency: 'XBT'
+
+currencyPairLimits:
+  ADA/CAD:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 1
+
+  ADA/ETH:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 1
+
+currencyLimits:
+  ALGO:
+    minimumOrderSize: '50F'
+  REP:
+    minimumOrderSize: '0.3F'

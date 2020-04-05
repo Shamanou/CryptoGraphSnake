@@ -3,60 +3,52 @@ package com.shamanou;
 import java.io.IOException;
 import java.util.List;
 
+import com.shamanou.domain.TickerDto;
+import com.shamanou.domain.Value;
+import com.shamanou.service.DatabaseService;
+import com.shamanou.service.EvolveService;
+import com.shamanou.service.OrderExecutorService;
 import io.jenetics.AnyGene;
 import io.jenetics.Phenotype;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+
 
 public class App {
-    final static Logger log = LoggerFactory.getLogger(App.class);
+    final static Logger LOGGER = LoggerFactory.getLogger(App.class);
+
+    @Inject
+    private DatabaseService databaseService;
 
     public static void main(String[] args) {
-        DbApi api = null;
-
+        DatabaseService databaseService = null;
         String key = args[0];
         String secret = args[1];
-        try {
-            api = new DbApi(key, secret);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
-        log.info("\n\n			Welcome to the CryptocurrencyGraphSnake\n			Developed by Shamanou van Leeuwen\n\n\n");
+        LOGGER.info("\n\n			Welcome to the CryptocurrencyGraphSnake\n			Developed by Shamanou van Leeuwen\n\n\n");
         while (true) {
             try {
-                assert api != null;
-                api.getTickerInformation();
+                databaseService.getTickerInformation();
+                LOGGER.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
+                for (int i = 0; i < 3;i++) {
+                    trade(databaseService, key, secret, i);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
-            }
-
-            log.info("\n			+-----------------------+\n			GRABBING TRADE START VALUE\n			+-----------------------+\n\n");
-            for (int i = 0; i < 4;i++) {
-                try {
-                    trade(api, key, secret, i);
-                }catch(Exception ex){
-                    ex.printStackTrace();
-                }
             }
         }
     }
 
-    private static void trade(DbApi api, String key, String secret, int i) {
-        List<Value> wallet = null;
-        try {
-            wallet = api.getStart();
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        assert wallet != null;
+    private static void trade(DatabaseService api, String key, String secret, int i) throws IOException {
+        List<Value> wallet;
+        wallet = api.getStart();
         Value start = wallet.get(i);
-        OrderExecutor orderExecutor = new OrderExecutor(api.getTable(), start, key, secret);
+        OrderExecutorService orderExecutorService = new OrderExecutorService(api.getDatabaseCollection(), start, key, secret);
 
-        log.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY - " + start.getCurrency().getDisplayName() + "\n			+-----------------------+\n\n");
-        Evolve e = new Evolve(start, api.getTable());
+        LOGGER.info("\n			+-----------------------+\n			EVOLVING TRADE TRAJECTORY - " + start.getCurrency().getDisplayName() + "\n			+-----------------------+\n\n");
+        EvolveService e = new EvolveService(start, api.getDatabaseCollection());
         Phenotype<AnyGene<TickerDto>, Double> result = e.run();
         StringBuilder resultString = new StringBuilder();
 
@@ -67,11 +59,11 @@ public class App {
             }
         }
 
-        log.info("Results:\n" + resultString + "\n");
+        LOGGER.info("Results:\n" + resultString + "\n");
         if (result.getFitness() > 0.0) {
-            orderExecutor.setOrder(result);
+            orderExecutorService.setOrder(result);
             try {
-                orderExecutor.executeOrder();
+                orderExecutorService.executeOrder();
             } catch (IOException ex) {
                 ex.printStackTrace();
             }

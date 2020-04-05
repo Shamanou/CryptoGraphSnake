@@ -1,0 +1,822 @@
+databaseHost: 'localhost'
+genomeSize: 3
+key:
+secret:
+
+referenceCurrency: 'XBT'
+
+currencyPairLimits:
+
+  ADA/CAD:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 1
+
+  ADA/ETH:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 1
+
+  ADA/EUR:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 1
+
+  ADA/USD:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 1
+
+  ADA/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 1
+
+  ALGO/ETH:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 50
+
+  ALGO/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 50
+
+  ALGO/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 50
+
+  ALGO/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 50
+
+  ATOM/CAD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  ATOM/ETH:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  ATOM/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  ATOM/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  ATOM/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  BAT/ETH:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 50
+
+  BAT/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 50
+
+  BAT/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 50
+
+  BAT/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 50
+
+  BCH/EUR:
+    pricePrecision: 1
+    volumePrecision: 8
+    minimumVolume: 0.000002
+
+  BCH/USD:
+    pricePrecision: 1
+    volumePrecision: 8
+    minimumVolume: 0.000002
+
+  BCH/XBT:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.000002
+
+  DASH/EUR:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  DASH/USD:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  DASH/XBT:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  DAI/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  DAI/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  DAI/USDT:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  EOS/ETH:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 3
+
+  EOS/EUR:
+    pricePrecision: 4
+    volumePrecision: 8
+    minimumVolume: 3
+
+  EOS/USD:
+    pricePrecision: 4
+    volumePrecision: 8
+    minimumVolume: 3
+
+  EOS/XBT:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 3
+
+  ETC/ETH:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 0.3
+
+  ETC/EUR:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 0.3
+
+  ETC/USD:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 0.3
+
+  ETC/XBT:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 0.3
+
+  ETH/CAD:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.02
+
+  ETH/CAD.d:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 2.500
+
+  ETH/DAI:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 0.02
+
+  ETH/EUR:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.02
+
+  ETH/EUR.d:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 2.500
+
+  ETH/GBP:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.02
+
+  ETH/GBP.d:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 2.500
+
+  ETH/JPY:
+    pricePrecision: 0
+    volumePrecision: 8
+    minimumVolume: 0.02
+
+  ETH/JPY.d:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 2.500
+
+  ETH/USD:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.02
+
+  ETH/USD.d:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 2.500
+
+  ETH/XBT:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.02
+
+  ETH/XBT.d:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 2.500
+
+  ETH/USDC:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.02
+
+  GNO/ETH:
+    pricePrecision: 4
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  GNO/EUR:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  GNO/USD:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  GNO/XBT:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  ICX/ETH:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 50
+
+  ICX/EUR:
+    pricePrecision: 4
+    volumePrecision: 8
+    minimumVolume: 50
+
+  ICX/USD:
+    pricePrecision: 4
+    volumePrecision: 8
+    minimumVolume: 50
+
+  ICX/XBT:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 50
+
+  LINK/ETH:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 10
+
+  LINK/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  LINK/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  LINK/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 10
+
+  LSK/ETH:
+    pricePrecision: 9
+    volumePrecision: 8
+    minimumVolume: 10
+
+  LSK/EUR:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 10
+
+  LSK/USD:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 10
+
+  LSK/XBT:
+    pricePrecision: 9
+    volumePrecision: 8
+    minimumVolume: 10
+
+  LTC/EUR:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  LTC/USD:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  LTC/XBT:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  MLN/ETH:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  MLN/XBT:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  NANO/ETH:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 10
+
+  NANO/EUR:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 10
+
+  NANO/USD:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 10
+
+  NANO/XBT:
+    pricePrecision: 9
+    volumePrecision: 8
+    minimumVolume: 10
+
+  OMG/ETH:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 10
+
+  OMG/EUR:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 10
+
+  OMG/USD:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 10
+
+  OMG/XBT:
+    pricePrecision: 9
+    volumePrecision: 8
+    minimumVolume: 10
+
+  PAXG/ETH:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 0.01
+
+  PAXG/EUR:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.01
+
+  PAXG/USD:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.01
+
+  PAXG/BTC:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 0.01
+
+  QTUM/CAD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  QTUM/ETH:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  QTUM/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  QTUM/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  QTUM/XBT:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  REP/ETH:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.3
+
+  REP/EUR:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 0.3
+
+  REP/USD:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 0.3
+
+  REP/XBT:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 0.3
+
+  SC/ETH:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 5000
+
+  SC/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 5000
+
+  SC/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 5000
+
+  SC/XBT:
+    pricePrecision: 10
+    volumePrecision: 8
+    minimumVolume: 5000
+
+  TRX/ETH:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 500
+
+  TRX/XBT:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 500
+
+  TRX/EUR:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 500
+
+  TRX/USD:
+    pricePrecision: 10
+    volumePrecision: 8
+    minimumVolume: 500
+
+  USDC/EUR:
+    pricePrecision: 4
+    volumePrecision: 8
+    minimumVolume: 5
+
+  USDC/USD:
+    pricePrecision: 4
+    volumePrecision: 8
+    minimumVolume: 5
+
+  USDC/USDT:
+    pricePrecision: 4
+    volumePrecision: 8
+    minimumVolume: 5
+
+  USDT/USD:
+    pricePrecision: 4
+    volumePrecision: 8
+    minimumVolume: 5
+
+  WAVES/ETH:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 10
+
+  WAVES/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  WAVES/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  WAVES/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 10
+
+  XBT/CAD:
+    pricePrecision: 1
+    volumePrecision: 8
+    minimumVolume: 0.002
+
+  XBT/CAD.d:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 50
+
+  XBT/EUR:
+    pricePrecision: 1
+    volumePrecision: 8
+    minimumVolume: 0.002
+
+  XBT/EUR.d:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 50
+
+  XBT/GBP:
+    pricePrecision: 1
+    volumePrecision: 8
+    minimumVolume: 0.002
+
+  XBT/GBP.d:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 50
+
+  XBT/JPY:
+    pricePrecision: 0
+    volumePrecision: 8
+    minimumVolume: 0.002
+
+  XBT/JPY.d:
+    pricePrecision: 1
+    volumePrecision: 8
+    minimumVolume: 50
+
+  XBT/USD:
+    pricePrecision: 1
+    volumePrecision: 8
+    minimumVolume: 0.002
+
+  XBT/USDC:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.002
+
+  XBT/USD.d:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 50
+
+  XDG/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 3000
+
+  XLM/EUR:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 30
+
+  XLM/USD:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 30
+
+  XLM/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 30
+
+  XMR/EUR:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  XMR/USD:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  XMR/XBT:
+    pricePrecision: 6
+    volumePrecision: 8
+    minimumVolume: 0.1
+
+  XRP/CAD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 30
+
+  XRP/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 30
+
+  XRP/JPY:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 30
+
+  XRP/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 30
+
+  XRP/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 30
+
+  XTZ/CAD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 1
+
+  XTZ/ETH:
+    pricePrecision: 7
+    volumePrecision: 8
+    minimumVolume: 1
+
+  XTZ/EUR:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 1
+
+  XTZ/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 1
+
+  XTZ/XBT:
+    pricePrecision: 8
+    volumePrecision: 8
+    minimumVolume: 1
+
+  ZEC/EUR:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  ZEC/JPY:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  ZEC/USD:
+    pricePrecision: 2
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  ZEC/XBT:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 0.03
+
+  EUR/CAD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  USD/CAD:
+    pricePrecision: 5
+    volumePrecision:
+    minimumVolume: 10
+
+  EUR/CHF:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  EUR/GBP:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  USD/CHF:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  EUR/JPY:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 10
+
+  USD/JPY:
+    pricePrecision: 3
+    volumePrecision: 8
+    minimumVolume: 10
+
+  EUR/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+  GBP/USD:
+    pricePrecision: 5
+    volumePrecision: 8
+    minimumVolume: 10
+
+currencyLimits:
+  ALGO:
+    minimumOrderSize: '50F'
+  REP:
+    minimumOrderSize: '0.3F'
+  BAT:
+    minimumOrderSize: '50F'
+  XBT:
+    minimumOrderSize: '0.002F'
+  BCH:
+    minimumOrderSize: '0.000002F'
+  ADA:
+    minimumOrderSize: '1F'
+  LINK:
+    minimumOrderSize: '10F'
+  ATOM:
+    minimumOrderSize: '1F'
+  DAI:
+    minimumOrderSize: '10F'
+  DASH:
+    minimumOrderSize: '0.03F'
+  XDG:
+    minimumOrderSize: '3000F'
+  EOS:
+    minimumOrderSize: '3F'
+  ETH:
+    minimumOrderSize: '0.02F'
+  ETC:
+    minimumOrderSize: '0.3F'
+  GNO:
+    minimumOrderSize: '0.02F'
+  ICX:
+    minimumOrderSize: '50F'
+  LSK:
+    minimumOrderSize: '10F'
+  LTC:
+    minimumOrderSize: '0.1F'
+  XMR:
+    minimumOrderSize: '0.1F'
+  NANO:
+    minimumOrderSize: '10F'
+  OMG:
+    minimumOrderSize: '10F'
+  PAXG:
+    minimumOrderSize: '0.1F'
+  QTUM:
+    minimumOrderSize: '0.1F'
+  XRP:
+    minimumOrderSize: '30F'
+  SC:
+    minimumOrderSize: '5000F'
+  XLM:
+    minimumOrderSize: '30F'
+  USDT:
+    minimumOrderSize: '5F'
+  XTZ:
+    minimumOrderSize: '1F'
+  TRX:
+    minimumOrderSize: '5000F'
+  USDC:
+    minimumOrderSize: '5F'
+  MLN:
+    minimumOrderSize: '0.1F'
+  WAVES:
+    minimumOrderSize: '10F'
+  ZEC:
+    minimumOrderSize: '0.03F'
+  EUR:
+    minimumOrderSize: '10F'
+  USD:
+    minimumOrderSize: '10F'
+  GBP:
+    minimumOrderSize: '10F'

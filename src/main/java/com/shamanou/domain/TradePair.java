@@ -1,4 +1,4 @@
-package com.shamanou;
+package com.shamanou.domain;
 
 public class TradePair {
     private String base;

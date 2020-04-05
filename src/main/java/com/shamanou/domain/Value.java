@@ -1,4 +1,4 @@
-package com.shamanou;
+package com.shamanou.domain;
 
 import org.knowm.xchange.currency.Currency;
 

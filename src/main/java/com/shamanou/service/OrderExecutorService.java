@@ -1,10 +1,18 @@
-package com.shamanou;
+package com.shamanou.service;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Iterator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.shamanou.config.Configuration;
+import com.shamanou.config.CurrencyPairLimit;
+import com.shamanou.domain.Reference;
+import com.shamanou.domain.TickerDto;
+import com.shamanou.domain.Value;
 import io.jenetics.AnyGene;
 import io.jenetics.Chromosome;
 import io.jenetics.Genotype;
@@ -24,17 +32,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.mongodb.client.MongoCollection;
 
-public class OrderExecutor {
+import javax.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+public class OrderExecutorService {
     private final MongoCollection<TickerDto> table;
     private Value start;
     private Phenotype<AnyGene<TickerDto>, Double> order;
-    private static final Logger log = LoggerFactory.getLogger(OrderExecutor.class);
+    private static final Logger log = LoggerFactory.getLogger(OrderExecutorService.class);
     private KrakenTradeService tradeService;
     private AccountService accountService;
+    private final Configuration configuration;
 
-    public OrderExecutor(MongoCollection<TickerDto> table, Value start, String k, String s) {
+    public OrderExecutorService(MongoCollection<TickerDto> table, Value start, String k, String s)
+            throws IOException {
         this.start = start;
         this.table = table;
+
+        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+        mapper.findAndRegisterModules();
+        configuration = mapper.readValue(new File("src/main/resources/config.yml"), Configuration.class);
 
         ExchangeSpecification exchangeSpecification = new ExchangeSpecification(KrakenExchange.class.getName());
         exchangeSpecification.setApiKey(k);
@@ -69,21 +86,23 @@ public class OrderExecutor {
                     || val.getTradePair().getQuote().startsWith("Z")) ?  val.getTradePair().getQuote().substring(1) : val.getTradePair().getQuote();
 
 
+            String pair = base + "/" + quote;
+            CurrencyPairLimit currencyPairLimit = configuration.getCurrencyPairLimits().get(pair);
             if (quote.equals(inval)) {
                 Reference reference = new Reference(this.table);
                 reference.setReference(base);
                 reference.setReferenceOf(quote);
                 reference.setVolume(available);
 
-                BigDecimal fee = reference.getConvertedValue().divide(new BigDecimal("100"), RoundingMode.DOWN).multiply(new BigDecimal("0.26")).setScale(3, RoundingMode.DOWN);
+                BigDecimal fee = reference.getConvertedValue().divide(new BigDecimal("100"), RoundingMode.DOWN).multiply(new BigDecimal("0.26")).setScale(currencyPairLimit.getPricePrecision(), RoundingMode.DOWN);
 
-                order = getMarketOrder(reference.getConvertedValue().subtract(fee), KrakenType.BUY, new CurrencyPair(base + "/" + quote));
+                order = getMarketOrder(reference.getConvertedValue().subtract(fee), KrakenType.BUY, new CurrencyPair(pair));
                 inval = base;
                 executeOrder(val, order);
             } else if (base.equals(inval)) {
-                BigDecimal fee = available.divide(new BigDecimal("100"), RoundingMode.DOWN).multiply(new BigDecimal("0.26")).setScale(3, RoundingMode.DOWN);
+                BigDecimal fee = available.divide(new BigDecimal("100"), RoundingMode.DOWN).multiply(new BigDecimal("0.26")).setScale(currencyPairLimit.getPricePrecision(), RoundingMode.DOWN);
 
-                order = getMarketOrder(available.subtract(fee), KrakenType.SELL, new CurrencyPair(base + "/" + quote));
+                order = getMarketOrder(available.subtract(fee), KrakenType.SELL, new CurrencyPair(pair));
                 inval = quote;
                 if (sleep()) break;
                 executeOrder(val, order);

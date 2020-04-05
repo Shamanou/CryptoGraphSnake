@@ -1,16 +1,14 @@
-package com.shamanou;
+package com.shamanou.domain;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.json.JSONArray;
-import org.knowm.xchange.kraken.dto.marketdata.KrakenFee;
 
 public final class TickerDto {
     private double tickerAsk;
     private double tickerBid;
     private List<ArrayList<Double>> feesRaw;
     private String feesVolumeCurrency;
-    private com.shamanou.TradePair pair;
+    private TradePair pair;
 
     public TickerDto() {}
 
@@ -38,11 +36,11 @@ public final class TickerDto {
         this.tickerBid = tickerBid;
     }
 
-    public com.shamanou.TradePair getTradePair() {
+    public TradePair getTradePair() {
         return this.pair;
     }
 
-    public void setTradePair(com.shamanou.TradePair pair) {
+    public void setTradePair(TradePair pair) {
         this.pair = pair;
     }
 }
